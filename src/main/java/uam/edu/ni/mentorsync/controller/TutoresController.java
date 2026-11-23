@@ -9,8 +9,11 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import uam.edu.ni.mentorsync.dao.UsuarioDAO.RegistroTutor;
+import uam.edu.ni.mentorsync.model.EstudianteApiDTO;
 import uam.edu.ni.mentorsync.model.TutorResumen;
 import uam.edu.ni.mentorsync.model.Usuario;
+import uam.edu.ni.mentorsync.service.EstudianteService;
 import uam.edu.ni.mentorsync.service.UsuarioService;
 import uam.edu.ni.mentorsync.util.SesionActual;
 
@@ -37,6 +40,8 @@ public class TutoresController {
     @FXML private TableColumn<TutorResumen, Double> colHoras;
 
     private final UsuarioService usuarioService = new UsuarioService();
+    private final EstudianteService estudianteService = new EstudianteService();
+    private EstudianteApiDTO candidato;
 
     @FXML
     private void initialize() {
@@ -50,16 +55,45 @@ public class TutoresController {
         colPromedio.setCellValueFactory(fila -> new ReadOnlyObjectWrapper<>(fila.getValue().promedio()));
         colHoras.setCellValueFactory(fila -> new ReadOnlyObjectWrapper<>(fila.getValue().horasValidadas()));
         txtCarnetBusqueda.textProperty().addListener((observable, anterior, nuevo) -> limpiarCandidato());
+        actualizarBotones(false);
         cargarTutores();
     }
 
     @FXML
     private void handleBuscarApi() {
+        String cif = txtCarnetBusqueda.getText().trim();
+        limpiarCandidato();
+        if (!cif.matches("[0-9]{8}")) {
+            lblEstadoElegibilidad.setText("El CIF debe tener 8 dígitos.");
+            return;
+        }
+        lblEstadoElegibilidad.setText("Consultando el registro académico...");
+        ejecutar(() -> estudianteService.buscar(cif), resultado -> resultado.ifPresentOrElse(
+                this::mostrarCandidato,
+                () -> lblEstadoElegibilidad.setText("No se encontró un estudiante con ese CIF.")),
+                () -> lblEstadoElegibilidad.setText("No se pudo consultar la API académica."));
     }
 
     @FXML
     private void handleRegistrarTutor() {
-        // Pendiente de implementar.
+        EstudianteApiDTO estudiante = candidato;
+        String clave = txtPasswordTutor.getText();
+        if (estudiante == null || !usuarioService.esElegible(estudiante)) {
+            return;
+        }
+        ejecutar(() -> usuarioService.registrarTutor(estudiante, clave), resultado -> {
+            switch (resultado) {
+                case DUPLICADO -> lblEstadoElegibilidad.setText("El CIF o correo ya está registrado.");
+                case REQUIERE_CLAVE -> lblEstadoElegibilidad.setText("Para crear una cuenta, escribe una contraseña.");
+                case HABILITADO, CREADO -> {
+                    handleLimpiar();
+                    lblEstadoElegibilidad.setText(resultado == RegistroTutor.HABILITADO
+                            ? "Estudiante habilitado como tutor. Conserva su contraseña."
+                            : "Tutor registrado.");
+                    cargarTutores();
+                }
+            }
+        }, () -> lblEstadoElegibilidad.setText("No se pudo registrar el tutor en PostgreSQL."));
     }
 
     @FXML
@@ -68,7 +102,19 @@ public class TutoresController {
         limpiarCandidato();
     }
 
+    private void mostrarCandidato(EstudianteApiDTO estudiante) {
+        candidato = estudiante;
+        txtNombre.setText(estudiante.nombre());
+        txtCorreo.setText(estudiante.correo());
+        txtCarrera.setText(estudiante.carrera());
+        txtPromedio.setText(Double.toString(estudiante.promedio()));
+        lblEstadoElegibilidad.setText(usuarioService.esElegible(estudiante)
+                ? "Estudiante elegible."
+                : "Se requiere un estudiante activo con promedio de 85 o más.");
+    }
+
     private void limpiarCandidato() {
+        candidato = null;
         txtNombre.clear();
         txtCorreo.clear();
         txtCarrera.clear();
@@ -82,7 +128,7 @@ public class TutoresController {
         txtCarnetBusqueda.setDisable(ocupado);
         btnBuscarApi.setDisable(ocupado);
         btnLimpiar.setDisable(ocupado);
-        btnRegistrarTutor.setDisable(true);
+        btnRegistrarTutor.setDisable(ocupado || candidato == null || !usuarioService.esElegible(candidato));
     }
 
     private void cargarTutores() {
