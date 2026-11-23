@@ -49,7 +49,7 @@
             </VBox>
         </HBox>
 
-        <Button fx:id="btnAgendar" maxWidth="Infinity" prefHeight="36.0" onAction="#handleAgendar"
+        <Button fx:id="btnAgendar" maxWidth="Infinity" prefHeight="36.0" disable="true" onAction="#handleAgendar"
                 style="-fx-background-color: #1e3a8a; -fx-text-fill: white; -fx-font-weight: bold;"
                 text="Agendar Sesión"/>
     </VBox>
@@ -77,13 +77,13 @@
         </TableView>
 
         <HBox alignment="CENTER_RIGHT" spacing="10.0">
-            <Button fx:id="btnCancelar" onAction="#handleCancelar"
+            <Button fx:id="btnCancelar" disable="true" onAction="#handleCancelar"
                     style="-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-weight: bold;"
                     text="Cancelar Cita"/>
-            <Button fx:id="btnMarcarRealizada" onAction="#handleMarcarRealizada"
+            <Button fx:id="btnMarcarRealizada" disable="true" onAction="#handleMarcarRealizada"
                     style="-fx-background-color: #d97706; -fx-text-fill: white; -fx-font-weight: bold;"
                     text="Marcar Realizada (Tutor)"/>
-            <Button fx:id="btnValidarHoras" onAction="#handleValidarHoras"
+            <Button fx:id="btnValidarHoras" disable="true" onAction="#handleValidarHoras"
                     style="-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold;"
                     text="Validar Horas (Coordinador)"/>
         </HBox>

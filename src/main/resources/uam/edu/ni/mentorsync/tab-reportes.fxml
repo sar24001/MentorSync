@@ -46,7 +46,7 @@
             <Label text="Observaciones"/>
             <TextField fx:id="txtObservaciones" promptText="Ej. Aprobó segundo parcial"/>
 
-            <Button fx:id="btnGuardarNotas" maxWidth="Infinity" onAction="#handleGuardarNotas"
+            <Button fx:id="btnGuardarNotas" maxWidth="Infinity" disable="true" onAction="#handleGuardarNotas"
                     style="-fx-background-color: #1e3a8a; -fx-text-fill: white; -fx-font-weight: bold;"
                     text="Guardar Calificaciones"/>
         </VBox>
@@ -67,13 +67,13 @@
             <Label text="Tutor para Constancia de Horas"/>
             <ComboBox fx:id="cmbTutorReporte" maxWidth="Infinity" promptText="Seleccione tutor"/>
 
-            <Button fx:id="btnReporteHoras" maxWidth="Infinity" onAction="#handleGenerarReporteHoras"
+            <Button fx:id="btnReporteHoras" maxWidth="Infinity" disable="true" onAction="#handleGenerarReporteHoras"
                     style="-fx-background-color: #0284c7; -fx-text-fill: white; -fx-font-weight: bold;"
                     text="Descargar Constancia de Horas"/>
 
             <Separator/>
 
-            <Button fx:id="btnReporteRendimiento" maxWidth="Infinity" onAction="#handleGenerarReporteRendimiento"
+            <Button fx:id="btnReporteRendimiento" maxWidth="Infinity" disable="true" onAction="#handleGenerarReporteRendimiento"
                     style="-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold;"
                     text="Descargar Reporte de Rendimiento"/>
         </VBox>

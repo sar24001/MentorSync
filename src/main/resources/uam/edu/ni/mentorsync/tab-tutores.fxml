@@ -26,7 +26,7 @@
         <Label text="Carnet del Estudiante" />
         <HBox spacing="8.0">
             <TextField fx:id="txtCarnetBusqueda" promptText="Ej. 20220104" HBox.hgrow="ALWAYS" />
-            <Button fx:id="btnBuscarApi" onAction="#handleBuscarApi" style="-fx-background-color: #0284c7; -fx-text-fill: white; -fx-font-weight: bold;" text="Consultar" />
+            <Button fx:id="btnBuscarApi" disable="true" onAction="#handleBuscarApi" style="-fx-background-color: #0284c7; -fx-text-fill: white; -fx-font-weight: bold;" text="Consultar" />
         </HBox>
 
         <Separator />
@@ -53,8 +53,8 @@
         <PasswordField fx:id="txtPasswordTutor" promptText="Clave de acceso al sistema" />
 
         <HBox spacing="10.0">
-            <Button fx:id="btnRegistrarTutor" maxWidth="Infinity" onAction="#handleRegistrarTutor" style="-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold;" text="Registrar Tutor" HBox.hgrow="ALWAYS" />
-            <Button fx:id="btnLimpiar" onAction="#handleLimpiar" text="Limpiar" />
+            <Button fx:id="btnRegistrarTutor" maxWidth="Infinity" disable="true" onAction="#handleRegistrarTutor" style="-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold;" text="Registrar Tutor" HBox.hgrow="ALWAYS" />
+            <Button fx:id="btnLimpiar" disable="true" onAction="#handleLimpiar" text="Limpiar" />
         </HBox>
     </VBox>
 
