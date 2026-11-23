@@ -93,8 +93,37 @@ public class TutoriaDAO {
 
     public boolean cancelar(long id) {
         return transaccion(sesion -> sesion.createNativeMutationQuery(
-                        "update " + TUTORIAS + " set estado = 'CANCELADA' where id = :id and estado = 'PROGRAMADA'")
+                        "update " + TUTORIAS + " set estado = 'CANCELADA' where id = :id and estado in ('PROGRAMADA', 'SOLICITUD_CANCELACION')")
                 .setParameter("id", id).executeUpdate() == 1);
+    }
+
+    public boolean solicitarCancelacion(long id, long estudiante, String motivo) {
+        return transaccion(sesion -> sesion.createNativeMutationQuery("""
+                        update mentorsync_academico.tutorias
+                        set estado = 'SOLICITUD_CANCELACION',
+                            motivo_cancelacion = :motivo
+                        where id = :id and estudiante_id = :estudiante and estado = 'PROGRAMADA'
+                        """)
+                .setParameter("id", id)
+                .setParameter("estudiante", estudiante)
+                .setParameter("motivo", motivo.trim())
+                .executeUpdate() == 1);
+    }
+
+    public boolean calificarTutor(long id, long estudiante, int calificacion, String comentario) {
+        return transaccion(sesion -> sesion.createNativeMutationQuery("""
+                        update mentorsync_academico.tutorias
+                        set calificacion_tutor = :calificacion,
+                            comentario_estudiante = :comentario
+                        where id = :id and estudiante_id = :estudiante
+                          and estado in ('REALIZADA', 'VALIDADA')
+                          and calificacion_tutor is null
+                        """)
+                .setParameter("id", id)
+                .setParameter("estudiante", estudiante)
+                .setParameter("calificacion", calificacion)
+                .setParameter("comentario", comentario.trim())
+                .executeUpdate() == 1);
     }
 
     public boolean marcarRealizada(long id, long tutor) {

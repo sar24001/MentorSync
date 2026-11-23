@@ -43,4 +43,7 @@ public class Usuario {
     public boolean isActivo() {
         return activo;
     }
+
+    public String getCif() {
+    return cif; }
 }
