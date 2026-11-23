@@ -16,6 +16,10 @@ public class Usuario {
     private String rol;
     private String password;
     private boolean activo;
+    private String carrera;
+    private Double promedio;
+    @Column(name = "horas_acumuladas")
+    private Double horasAcumuladas;
 
     protected Usuario() {
     }
