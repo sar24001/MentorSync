@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class UsuarioDAO {
+
     public Optional<Usuario> buscarPorCif(String cif) {
         try (EntityManager em = HibernateUtil.getEntityManager()) {
             return Optional.ofNullable(em.createQuery(
@@ -78,6 +79,36 @@ public class UsuarioDAO {
                     where u.rol = 'TUTOR' and u.activo = true
                     order by u.nombre, u.cif
                     """, TutorResumen.class).getResultList();
+        }
+    }
+
+    public List<Usuario> buscarTutoresActivosPorNombre(String criterio) {
+        try (EntityManager em = HibernateUtil.getEntityManager()) {
+            return em.createQuery("""
+                    select u from Usuario u
+                    where u.rol = 'TUTOR'
+                      and u.activo = true
+                      and lower(u.nombre) like lower(:patron)
+                    order by u.nombre, u.cif
+                    """, Usuario.class)
+                    .setParameter("patron", "%" + criterio.trim() + "%")
+                    .setMaxResults(15)
+                    .getResultList();
+        }
+    }
+
+    public List<Usuario> buscarEstudiantesActivosPorNombre(String criterio) {
+        try (EntityManager em = HibernateUtil.getEntityManager()) {
+            return em.createQuery("""
+                    select u from Usuario u
+                    where u.rol = 'ESTUDIANTE'
+                      and u.activo = true
+                      and lower(u.nombre) like lower(:patron)
+                    order by u.nombre, u.cif
+                    """, Usuario.class)
+                    .setParameter("patron", "%" + criterio.trim() + "%")
+                    .setMaxResults(15)
+                    .getResultList();
         }
     }
 }

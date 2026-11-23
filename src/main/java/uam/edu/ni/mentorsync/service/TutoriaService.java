@@ -28,7 +28,31 @@ public class TutoriaService {
 
     public String cancelar(Usuario actor, long id) {
         exigirRol(actor, "COORDINADOR");
-        return dao.cancelar(id) ? "Tutoría cancelada." : "Solo se puede cancelar una tutoría programada.";
+        return dao.cancelar(id)
+                ? "Tutoría cancelada." : "Solo se puede cancelar una tutoría programada o con solicitud pendiente.";
+    }
+
+    public String solicitarCancelacion(Usuario actor, long id, String motivo) {
+        exigirRol(actor, "ESTUDIANTE");
+        if (motivo == null || motivo.trim().length() < 5) {
+            return "Escribe un motivo válido (mínimo 5 caracteres).";
+        }
+        return dao.solicitarCancelacion(id, actor.getId(), motivo)
+                ? "Solicitud de cancelación enviada al coordinador."
+                : "Solo puedes solicitar la cancelación de una tutoría programada asignada a ti.";
+    }
+
+    public String calificarTutor(Usuario actor, long id, int calificacion, String comentario) {
+        exigirRol(actor, "ESTUDIANTE");
+        if (calificacion < 1 || calificacion > 5) {
+            return "La calificación debe estar entre 1 y 5 estrellas.";
+        }
+        if (comentario == null || comentario.trim().isEmpty()) {
+            return "Escribe un comentario o reseña sobre la tutoría.";
+        }
+        return dao.calificarTutor(id, actor.getId(), calificacion, comentario)
+                ? "Reseña registrada. Gracias por calificar al tutor."
+                : "Esta tutoría ya fue calificada o aún no ha sido impartida.";
     }
 
     public String marcarRealizada(Usuario actor, long id) {
@@ -43,7 +67,7 @@ public class TutoriaService {
     }
 
     private void exigirRol(Usuario actor, String rol) {
-        if (!rol.equals(actor.getRol())) {
+        if (actor == null || !rol.equals(actor.getRol())) {
             throw new IllegalStateException("El usuario no tiene permiso para esta acción.");
         }
     }
