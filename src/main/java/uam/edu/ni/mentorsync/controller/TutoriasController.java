@@ -3,6 +3,7 @@ package uam.edu.ni.mentorsync.controller;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -52,6 +53,13 @@ public class TutoriasController {
     @FXML
     private void initialize() {
         actor = SesionActual.getUsuario();
+        boolean coordinador = "COORDINADOR".equals(actor.getRol());
+        boolean tutor = "TUTOR".equals(actor.getRol());
+        mostrarControl(btnAgendar.getParent(), coordinador);
+        mostrarControl(btnCancelar, coordinador);
+        mostrarControl(btnValidarHoras, coordinador);
+        mostrarControl(btnMarcarRealizada, tutor);
+        mostrarControl(btnMarcarRealizada.getParent(), coordinador || tutor);
         tblTutorias.getSelectionModel().selectedItemProperty().addListener(
                 (observable, anterior, actual) -> actualizarBotones(ocupado));
         colFecha.setCellValueFactory(fila -> new ReadOnlyObjectWrapper<>(fila.getValue().fecha()));
@@ -152,6 +160,11 @@ public class TutoriasController {
         Thread hilo = new Thread(tarea, "mentorsync-tutorias");
         hilo.setDaemon(true);
         hilo.start();
+    }
+
+    private void mostrarControl(Node control, boolean visible) {
+        control.setVisible(visible);
+        control.setManaged(visible);
     }
 
     private void actualizarBotones(boolean ocupado) {
