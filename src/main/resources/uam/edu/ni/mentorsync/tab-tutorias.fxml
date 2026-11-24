@@ -13,11 +13,13 @@
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
     </padding>
 
-    <!-- Panel Izquierdo: Agendamiento -->
-    <VBox prefWidth="320.0" spacing="10.0"
+    <!-- Panel Izquierdo: Agendamiento con Búsqueda por Nombre -->
+    <ScrollPane fx:id="panelAgendar" fitToWidth="true" hbarPolicy="NEVER"
+                minWidth="300.0" prefWidth="300.0" maxWidth="300.0">
+    <VBox spacing="9.0"
           style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8;">
         <padding>
-            <Insets bottom="18.0" left="18.0" right="18.0" top="18.0"/>
+            <Insets bottom="16.0" left="18.0" right="18.0" top="16.0"/>
         </padding>
 
         <Label text="Agendar Nueva Tutoría" textFill="#1e3a8a">
@@ -26,14 +28,38 @@
             </font>
         </Label>
 
-        <Label text="Tutor"/>
-        <ComboBox fx:id="cmbTutor" maxWidth="Infinity" promptText="Seleccione un tutor"/>
+        <!-- Búsqueda de Tutor por Nombre -->
+        <Label text="Buscar Tutor (Nombre o Apellido)"/>
+        <HBox spacing="8.0">
+            <TextField fx:id="txtBuscarTutor" onAction="#handleBuscarTutor"
+                       promptText="Ej. Carlos Mendoza" HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnBuscarTutor" onAction="#handleBuscarTutor"
+                    style="-fx-background-color: #0284c7; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
+                    text="Buscar"/>
+        </HBox>
+        <TextField fx:id="txtTutorSeleccionado" editable="false" promptText="Ningún tutor seleccionado"
+                   style="-fx-background-color: #f1f5f9; -fx-text-fill: #0f172a; -fx-font-weight: bold;"/>
 
-        <Label text="Estudiante"/>
-        <ComboBox fx:id="cmbEstudiante" maxWidth="Infinity" promptText="Seleccione estudiante"/>
+        <!-- Búsqueda de Estudiante por Nombre -->
+        <Label text="Buscar Estudiante (Nombre o Apellido)"/>
+        <HBox spacing="8.0">
+            <TextField fx:id="txtBuscarEstudiante" onAction="#handleBuscarEstudiante"
+                       promptText="Ej. Diego Morales" HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnBuscarEstudiante" onAction="#handleBuscarEstudiante"
+                    style="-fx-background-color: #0284c7; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
+                    text="Buscar"/>
+        </HBox>
+        <TextField fx:id="txtEstudianteSeleccionado" editable="false" promptText="Ningún estudiante seleccionado"
+                   style="-fx-background-color: #f1f5f9; -fx-text-fill: #0f172a; -fx-font-weight: bold;"/>
+        <Button fx:id="btnImportarEstudiante" text="Buscar carnet en API" onAction="#handleImportarEstudiante"/>
 
+        <Separator/>
+
+        <!-- Catálogo de Asignaturas -->
         <Label text="Asignatura"/>
         <ComboBox fx:id="cmbAsignatura" maxWidth="Infinity" promptText="Seleccione materia"/>
+        <Label fx:id="lblMateriasTutor" text="Selecciona un tutor para ver sus materias habilitadas."
+               wrapText="true" textFill="#64748b"/>
 
         <Label text="Fecha de Sesión"/>
         <DatePicker fx:id="dpFecha" maxWidth="Infinity"/>
@@ -50,19 +76,46 @@
         </HBox>
 
         <Button fx:id="btnAgendar" maxWidth="Infinity" prefHeight="36.0" onAction="#handleAgendar"
-                style="-fx-background-color: #1e3a8a; -fx-text-fill: white; -fx-font-weight: bold;"
+                style="-fx-background-color: #1e3a8a; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
                 text="Agendar Sesión"/>
     </VBox>
+    </ScrollPane>
 
     <!-- Panel Derecho: Control de Sesiones y Validación de Horas -->
-    <VBox spacing="12.0" HBox.hgrow="ALWAYS">
-        <Label text="Control de Sesiones Programadas" textFill="#1e293b">
+    <VBox minWidth="0.0" spacing="12.0" HBox.hgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+        <Label text="Sesiones de tutoría" textFill="#1e293b">
             <font>
                 <Font name="System Bold" size="16.0"/>
             </font>
         </Label>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="btnCatalogo" text="Catálogo de materias" onAction="#handleCatalogo"/>
+            <Button fx:id="btnActualizar" text="Actualizar" onAction="#cargar"/>
+        </HBox>
 
-        <TableView fx:id="tblTutorias" VBox.vgrow="ALWAYS">
+        <FlowPane hgap="10.0" vgap="8.0">
+            <VBox spacing="4.0">
+                <Label text="Estado"/>
+                <ComboBox fx:id="cmbFiltroEstado" prefWidth="185.0"/>
+            </VBox>
+            <VBox spacing="4.0">
+                <Label text="Asignatura"/>
+                <ComboBox fx:id="cmbFiltroAsignatura" prefWidth="190.0"/>
+            </VBox>
+            <VBox spacing="4.0">
+                <Label text="Desde"/>
+                <DatePicker fx:id="dpDesde" prefWidth="140.0" editable="false"/>
+            </VBox>
+            <VBox spacing="4.0">
+                <Label text="Hasta"/>
+                <DatePicker fx:id="dpHasta" prefWidth="140.0" editable="false"/>
+            </VBox>
+            <Button text="Limpiar filtros" onAction="#handleLimpiarFiltros"/>
+        </FlowPane>
+        <Label fx:id="lblFiltros" text="Cargando sesiones..." wrapText="true" textFill="#64748b"/>
+
+        <TableView fx:id="tblTutorias" minWidth="0.0" minHeight="150.0" VBox.vgrow="ALWAYS">
             <columns>
                 <TableColumn fx:id="colFecha" prefWidth="95.0" text="Fecha"/>
                 <TableColumn fx:id="colHorario" prefWidth="110.0" text="Horario"/>
@@ -76,16 +129,26 @@
             </columnResizePolicy>
         </TableView>
 
-        <HBox alignment="CENTER_RIGHT" spacing="10.0">
+        <FlowPane alignment="CENTER_RIGHT" hgap="8.0" vgap="8.0">
+            <Button fx:id="btnVerDetalle" onAction="#handleVerDetalle" text="Ver Detalle"/>
+            <Button fx:id="btnReprogramar" onAction="#handleReprogramar" text="Reprogramar"/>
+            <Button fx:id="btnEliminar" onAction="#handleEliminar" text="Eliminar"
+                    style="-fx-background-color: #991b1b; -fx-text-fill: white;"/>
+            <Button fx:id="btnSolicitarCancelacion" onAction="#handleSolicitarCancelacion"
+                    style="-fx-background-color: #ea580c; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
+                    text="Solicitar Cancelación"/>
+            <Button fx:id="btnCalificarTutor" onAction="#handleCalificarTutor"
+                    style="-fx-background-color: #0284c7; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
+                    text="Calificar Tutor"/>
             <Button fx:id="btnCancelar" onAction="#handleCancelar"
-                    style="-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-weight: bold;"
+                    style="-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
                     text="Cancelar Cita"/>
             <Button fx:id="btnMarcarRealizada" onAction="#handleMarcarRealizada"
-                    style="-fx-background-color: #d97706; -fx-text-fill: white; -fx-font-weight: bold;"
+                    style="-fx-background-color: #d97706; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
                     text="Marcar Realizada (Tutor)"/>
             <Button fx:id="btnValidarHoras" onAction="#handleValidarHoras"
-                    style="-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold;"
+                    style="-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
                     text="Validar Horas (Coordinador)"/>
-        </HBox>
+        </FlowPane>
     </VBox>
 </HBox>

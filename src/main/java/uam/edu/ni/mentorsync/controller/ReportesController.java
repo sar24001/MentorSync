@@ -137,6 +137,14 @@ public class ReportesController {
         } catch (Exception e) {
             mostrarAlerta(Alert.AlertType.ERROR, "Error", "No se pudieron guardar las notas: " + e.getMessage());
         }
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.Node;
+
+public class ReportesController {
+    @FXML
+    private void handleGuardarNotas(ActionEvent event) {
+        ((Node) event.getSource()).setDisable(true);
     }
 
     @FXML
@@ -165,6 +173,7 @@ public class ReportesController {
         } catch (Exception e) {
             mostrarAlerta(Alert.AlertType.ERROR, "Error al exportar", e.getMessage());
         }
+        ((Node) event.getSource()).setDisable(true);
     }
 
     @FXML
@@ -220,5 +229,8 @@ public class ReportesController {
         alert.setHeaderText(null);
         alert.setContentText(mensaje);
         alert.showAndWait();
+    }
+}
+        ((Node) event.getSource()).setDisable(true);
     }
 }
