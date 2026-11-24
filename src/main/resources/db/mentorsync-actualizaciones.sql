@@ -19,3 +19,7 @@ ALTER TABLE mentorsync_academico.tutorias
 
 CREATE INDEX IF NOT EXISTS idx_tutorias_grupo
     ON mentorsync_academico.tutorias (grupo_id) WHERE grupo_id IS NOT NULL;
+
+ALTER TABLE mentorsync_seguridad.usuarios
+    ADD COLUMN IF NOT EXISTS recuperacion_hash VARCHAR(64),
+    ADD COLUMN IF NOT EXISTS recuperacion_expira TIMESTAMPTZ;
