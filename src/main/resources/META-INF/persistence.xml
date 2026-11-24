@@ -3,6 +3,8 @@
     <persistence-unit name="MentorSyncPU" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <class>uam.edu.ni.mentorsync.model.Usuario</class>
+        <class>uam.edu.ni.mentorsync.model.Asignatura</class>
+        <class>uam.edu.ni.mentorsync.model.Tutoria</class>
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
     </persistence-unit>
 </persistence>

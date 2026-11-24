@@ -1,6 +1,11 @@
 module uam.edu.ni.mentorsync {
     requires javafx.controls;
     requires javafx.fxml;
+    requires com.github.librepdf.openpdf;
+    requires org.dhatim.fastexcel;
+    requires java.desktop;
+
+    opens uam.edu.ni.mentorsync to javafx.fxml;
     requires jakarta.persistence;
     requires org.hibernate.orm.core;
     requires org.postgresql.jdbc;
