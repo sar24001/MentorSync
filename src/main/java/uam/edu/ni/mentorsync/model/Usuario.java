@@ -32,9 +32,14 @@ public class Usuario {
         Usuario usuario = new Usuario();
         usuario.cif = estudiante.cif();
         usuario.password = password;
-        usuario.activo = true;
         usuario.horasAcumuladas = 0.0;
         usuario.habilitarComoTutor(estudiante);
+        return usuario;
+    }
+
+    public static Usuario crearEstudiante(EstudianteApiDTO estudiante, String password) {
+        Usuario usuario = crearTutor(estudiante, password);
+        usuario.rol = "ESTUDIANTE";
         return usuario;
     }
 
@@ -42,8 +47,9 @@ public class Usuario {
         nombre = estudiante.nombre();
         correo = estudiante.correo();
         carrera = estudiante.carrera();
-        promedio = estudiante.promedio();
+        promedio = Math.round(estudiante.calcularPromedioGeneral() * 100.0) / 100.0;
         rol = "TUTOR";
+        activo = true;
     }
 
     public Long getId() {
@@ -67,5 +73,6 @@ public class Usuario {
     }
 
     public String getCif() {
-    return cif; }
+        return cif;
+    }
 }

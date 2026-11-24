@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS mentorsync_seguridad.usuarios (
 CREATE TABLE IF NOT EXISTS mentorsync_academico.asignaturas (
                                                                 id BIGSERIAL PRIMARY KEY,
                                                                 codigo VARCHAR(20) NOT NULL UNIQUE,
-    nombre VARCHAR(100) NOT NULL
+    nombre VARCHAR(100) NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE
     );
 
 -- Tabla de tutorías
@@ -47,6 +48,13 @@ CREATE TABLE IF NOT EXISTS mentorsync_academico.tutorias (
     CONSTRAINT fk_tutoria_asignatura
     FOREIGN KEY (asignatura_id) REFERENCES mentorsync_academico.asignaturas(id) ON DELETE RESTRICT
     );
+
+CREATE TABLE IF NOT EXISTS mentorsync_academico.tutor_asignaturas (
+                                                        tutor_id bigint not null references mentorsync_seguridad.usuarios(id) on delete cascade,
+                                                        asignatura_id bigint not null references mentorsync_academico.asignaturas(id) on delete cascade,
+                                                        nota_aprobacion numeric(5,2) not null check (nota_aprobacion between 85 and 100),
+                                                        primary key (tutor_id, asignatura_id)
+);
 
 -- Inserciones de datos en las tablas
 INSERT INTO mentorsync_seguridad.usuarios (carnet, nombre, correo, password, rol, carrera, promedio, horas_acumuladas, activo) VALUES

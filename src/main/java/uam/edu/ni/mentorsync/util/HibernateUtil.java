@@ -19,7 +19,7 @@ public final class HibernateUtil {
                 throw new IllegalStateException("Configura MENTORSYNC_DB_PASSWORD para conectar a PostgreSQL.");
             }
             Map<String, String> environment = System.getenv();
-            factory = Persistence.createEntityManagerFactory("MentorSyncPU", Map.of(
+            EntityManagerFactory nuevaFactory = Persistence.createEntityManagerFactory("MentorSyncPU", Map.of(
                     "jakarta.persistence.jdbc.url", environment.getOrDefault("MENTORSYNC_DB_URL",
                             "jdbc:postgresql://localhost:5432/mentorsync_db"),
                     "jakarta.persistence.jdbc.user", environment.getOrDefault("MENTORSYNC_DB_USER", "postgres"),
@@ -28,6 +28,13 @@ public final class HibernateUtil {
                     "hibernate.connection.socketTimeout", "15",
                     "jakarta.persistence.query.timeout", 10_000
             ));
+            try {
+                EsquemaAcademico.actualizar(nuevaFactory);
+                factory = nuevaFactory;
+            } catch (RuntimeException error) {
+                nuevaFactory.close();
+                throw error;
+            }
         }
         return factory.createEntityManager();
     }

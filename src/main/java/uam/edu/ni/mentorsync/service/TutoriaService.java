@@ -5,12 +5,47 @@ import uam.edu.ni.mentorsync.model.Usuario;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Optional;
+import java.util.Set;
 
 public class TutoriaService {
     private final TutoriaDAO dao = new TutoriaDAO();
 
+    public record Resultado(boolean exito, String mensaje) {
+    }
+
     public TutoriaDAO.Datos cargar(Usuario actor) {
+        exigirUsuario(actor);
         return dao.cargar(actor.getId(), actor.getRol());
+    }
+
+    public Optional<TutoriaDAO.Detalle> buscarDetalle(Usuario actor, long id) {
+        exigirUsuario(actor);
+        return dao.buscarDetalle(id, actor.getId(), actor.getRol());
+    }
+
+    public java.util.List<TutoriaDAO.Opcion> materiasTutor(Usuario actor, long tutor) {
+        exigirRol(actor, "COORDINADOR");
+        return dao.materiasTutor(tutor);
+    }
+
+    public Resultado reprogramar(Usuario actor, long id, LocalDate fecha, LocalTime inicio, LocalTime fin) {
+        exigirRol(actor, "COORDINADOR");
+        if (!horarioValido(fecha, inicio, fin)) {
+            return new Resultado(false, "Selecciona una fecha vigente y una hora de fin posterior al inicio.");
+        }
+        return dao.reprogramar(id, fecha, inicio, fin)
+                ? new Resultado(true, "Tutoría reprogramada.")
+                : new Resultado(false, "No se pudo reprogramar: hay un choque de horario del tutor o estudiante, "
+                        + "o la sesión ya no está PROGRAMADA.");
+    }
+
+    public Resultado eliminar(Usuario actor, long id) {
+        exigirRol(actor, "COORDINADOR");
+        return dao.eliminar(id)
+                ? new Resultado(true, "Sesión eliminada.")
+                : new Resultado(false, "Solo se pueden eliminar sesiones PROGRAMADAS o CANCELADAS. "
+                        + "La sesión puede haber cambiado de estado o ya no existir.");
     }
 
     public String agendar(Usuario actor, long tutor, long estudiante, long materia,
@@ -19,11 +54,23 @@ public class TutoriaService {
         if (tutor == estudiante) {
             return "El tutor y el estudiante deben ser personas distintas.";
         }
-        if (fecha.isBefore(LocalDate.now()) || !inicio.isBefore(fin)) {
+        if (!horarioValido(fecha, inicio, fin)) {
             return "Revisa la fecha y asegúrate de que el fin sea posterior al inicio.";
         }
         return dao.agendar(tutor, estudiante, materia, fecha, inicio, fin)
                 ? "Tutoría agendada." : "Hay un choque de horario o algún dato ya no está disponible.";
+    }
+
+    private boolean horarioValido(LocalDate fecha, LocalTime inicio, LocalTime fin) {
+        return fecha != null && inicio != null && fin != null
+                && !fecha.isBefore(LocalDate.now()) && inicio.isBefore(fin);
+    }
+
+    private void exigirUsuario(Usuario actor) {
+        if (actor == null || actor.getRol() == null
+                || !Set.of("COORDINADOR", "TUTOR", "ESTUDIANTE").contains(actor.getRol())) {
+            throw new IllegalStateException("El usuario no tiene permiso para consultar tutorías.");
+        }
     }
 
     public String cancelar(Usuario actor, long id) {

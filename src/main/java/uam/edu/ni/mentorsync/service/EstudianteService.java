@@ -14,7 +14,7 @@ import java.util.Optional;
 
 public class EstudianteService {
     private static final String URL_API =
-            "https://gist.githubusercontent.com/sar24001/55b0fea24d086178d4a268b1550a8814/raw/c31ba0b6dc3371bb2eaf5e07eb99b5ff3ca7ed94/estudiantes.json";
+            "https://gist.githubusercontent.com/sar24001/55b0fea24d086178d4a268b1550a8814/raw/d436c46844329c76c1b690c611327cd295fb41be/estudiantes.json";
 
     private HttpClient cliente;
     private final ObjectMapper json = new ObjectMapper();
