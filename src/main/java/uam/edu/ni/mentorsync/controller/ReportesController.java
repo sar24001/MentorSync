@@ -13,6 +13,7 @@ import javafx.stage.Window;
 import uam.edu.ni.mentorsync.model.Tutoria;
 import uam.edu.ni.mentorsync.model.Usuario;
 import uam.edu.ni.mentorsync.service.ReporteService;
+import uam.edu.ni.mentorsync.util.SesionActual;
 
 import java.io.File;
 import java.util.List;
@@ -43,6 +44,10 @@ public class ReportesController {
 
     @FXML
     public void initialize() {
+        Usuario usuario = SesionActual.getUsuario();
+        if (usuario == null || !"COORDINADOR".equals(usuario.getRol())) {
+            return;
+        }
         configurarTabla();
         configurarListeners();
         cargarDatos();
@@ -123,8 +128,8 @@ public class ReportesController {
             Double notaFin = txtNotaFinal.getText().isBlank() ? null : Double.parseDouble(txtNotaFinal.getText().trim());
             String obs = txtObservaciones.getText().trim();
 
-            if ((notaIni != null && (notaIni < 0 || notaIni > 100)) ||
-                    (notaFin != null && (notaFin < 0 || notaFin > 100))) {
+            if ((notaIni != null && (!Double.isFinite(notaIni) || notaIni < 0 || notaIni > 100)) ||
+                    (notaFin != null && (!Double.isFinite(notaFin) || notaFin < 0 || notaFin > 100))) {
                 mostrarAlerta(Alert.AlertType.WARNING, "Validación", "Las notas deben estar entre 0 y 100.");
                 return;
             }
@@ -137,14 +142,6 @@ public class ReportesController {
         } catch (Exception e) {
             mostrarAlerta(Alert.AlertType.ERROR, "Error", "No se pudieron guardar las notas: " + e.getMessage());
         }
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.scene.Node;
-
-public class ReportesController {
-    @FXML
-    private void handleGuardarNotas(ActionEvent event) {
-        ((Node) event.getSource()).setDisable(true);
     }
 
     @FXML
@@ -173,7 +170,6 @@ public class ReportesController {
         } catch (Exception e) {
             mostrarAlerta(Alert.AlertType.ERROR, "Error al exportar", e.getMessage());
         }
-        ((Node) event.getSource()).setDisable(true);
     }
 
     @FXML
@@ -229,8 +225,5 @@ public class ReportesController {
         alert.setHeaderText(null);
         alert.setContentText(mensaje);
         alert.showAndWait();
-    }
-}
-        ((Node) event.getSource()).setDisable(true);
     }
 }

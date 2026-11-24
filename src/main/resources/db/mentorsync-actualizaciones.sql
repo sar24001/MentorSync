@@ -7,3 +7,8 @@ CREATE TABLE IF NOT EXISTS mentorsync_academico.tutor_asignaturas (
     nota_aprobacion NUMERIC(5,2) NOT NULL CHECK (nota_aprobacion BETWEEN 85 AND 100),
     PRIMARY KEY (tutor_id, asignatura_id)
 );
+
+ALTER TABLE mentorsync_academico.tutorias
+    ADD COLUMN IF NOT EXISTS calificacion_tutor INTEGER,
+    ADD COLUMN IF NOT EXISTS comentario_estudiante VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS motivo_cancelacion VARCHAR(255);
