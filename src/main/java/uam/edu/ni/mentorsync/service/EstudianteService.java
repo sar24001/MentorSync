@@ -16,11 +16,18 @@ public class EstudianteService {
     private static final String URL_API =
             "https://gist.githubusercontent.com/sar24001/55b0fea24d086178d4a268b1550a8814/raw/c31ba0b6dc3371bb2eaf5e07eb99b5ff3ca7ed94/estudiantes.json";
 
-    private final HttpClient cliente = HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .connectTimeout(Duration.ofSeconds(5))
-            .build();
+    private HttpClient cliente;
     private final ObjectMapper json = new ObjectMapper();
+
+    private synchronized HttpClient cliente() {
+        if (cliente == null) {
+            cliente = HttpClient.newBuilder()
+                    .followRedirects(HttpClient.Redirect.NORMAL)
+                    .connectTimeout(Duration.ofSeconds(5))
+                    .build();
+        }
+        return cliente;
+    }
 
     public Optional<EstudianteApiDTO> buscar(String cif) throws IOException, InterruptedException {
         if (cif == null || !cif.trim().matches("[0-9]{8}")) {
@@ -34,7 +41,7 @@ public class EstudianteService {
                 .GET()
                 .build();
 
-        HttpResponse<byte[]> respuesta = cliente.send(solicitud, HttpResponse.BodyHandlers.ofByteArray());
+        HttpResponse<byte[]> respuesta = cliente().send(solicitud, HttpResponse.BodyHandlers.ofByteArray());
 
         return switch (respuesta.statusCode()) {
             case 200 -> Arrays.stream(json.readValue(respuesta.body(), EstudianteApiDTO[].class))

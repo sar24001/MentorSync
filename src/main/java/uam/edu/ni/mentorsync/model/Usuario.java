@@ -2,6 +2,8 @@ package uam.edu.ni.mentorsync.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
@@ -9,10 +11,12 @@ import jakarta.persistence.Table;
 @Table(name = "usuarios", schema = "mentorsync_seguridad")
 public class Usuario {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name = "carnet")
     private String cif;
     private String nombre;
+    private String correo;
     private String rol;
     private String password;
     private boolean activo;
@@ -22,6 +26,24 @@ public class Usuario {
     private Double horasAcumuladas;
 
     protected Usuario() {
+    }
+
+    public static Usuario crearTutor(EstudianteApiDTO estudiante, String password) {
+        Usuario usuario = new Usuario();
+        usuario.cif = estudiante.cif();
+        usuario.password = password;
+        usuario.activo = true;
+        usuario.horasAcumuladas = 0.0;
+        usuario.habilitarComoTutor(estudiante);
+        return usuario;
+    }
+
+    public void habilitarComoTutor(EstudianteApiDTO estudiante) {
+        nombre = estudiante.nombre();
+        correo = estudiante.correo();
+        carrera = estudiante.carrera();
+        promedio = estudiante.promedio();
+        rol = "TUTOR";
     }
 
     public Long getId() {

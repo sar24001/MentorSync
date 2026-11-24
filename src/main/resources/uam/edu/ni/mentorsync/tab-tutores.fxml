@@ -60,11 +60,16 @@
 
     <!-- Panel Derecho: Tabla de Tutores Activos -->
     <VBox spacing="10.0" HBox.hgrow="ALWAYS">
-        <Label text="Tutores Habilitados en el Sistema" textFill="#1e293b">
-            <font>
-                <Font name="System Bold" size="16.0" />
-            </font>
-        </Label>
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <Label text="Tutores Habilitados en el Sistema" textFill="#1e293b">
+                <font>
+                    <Font name="System Bold" size="16.0" />
+                </font>
+            </Label>
+            <Region HBox.hgrow="ALWAYS" />
+            <Button onAction="#cargarTutores" text="Actualizar" />
+        </HBox>
+        <Label fx:id="lblEstadoTutores" text="Cargando tutores..." textFill="#64748b" wrapText="true" />
 
         <TableView fx:id="tblTutores" VBox.vgrow="ALWAYS">
             <columns>

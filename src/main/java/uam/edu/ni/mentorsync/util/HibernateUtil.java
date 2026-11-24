@@ -23,7 +23,10 @@ public final class HibernateUtil {
                     "jakarta.persistence.jdbc.url", environment.getOrDefault("MENTORSYNC_DB_URL",
                             "jdbc:postgresql://localhost:5432/mentorsync_db"),
                     "jakarta.persistence.jdbc.user", environment.getOrDefault("MENTORSYNC_DB_USER", "postgres"),
-                    "jakarta.persistence.jdbc.password", password
+                    "jakarta.persistence.jdbc.password", password,
+                    "hibernate.connection.connectTimeout", "5",
+                    "hibernate.connection.socketTimeout", "15",
+                    "jakarta.persistence.query.timeout", 10_000
             ));
         }
         return factory.createEntityManager();

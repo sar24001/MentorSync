@@ -27,43 +27,44 @@ public class UsuarioDAO {
             var transaccion = em.getTransaction();
             try {
                 transaccion.begin();
-                int habilitados = em.createNativeQuery("""
-                        update mentorsync_seguridad.usuarios
-                        set rol = 'TUTOR', promedio = :promedio
-                        where carnet = :cif and activo and rol = 'ESTUDIANTE'
-                        """)
+                boolean correoOcupado = em.createQuery("""
+                        select count(u) from Usuario u
+                        where u.correo = :correo and u.cif <> :cif
+                        """, Long.class)
+                        .setParameter("correo", estudiante.correo())
                         .setParameter("cif", estudiante.cif())
-                        .setParameter("promedio", estudiante.promedio())
-                        .executeUpdate();
-                if (habilitados == 1) {
+                        .getSingleResult() > 0;
+                if (correoOcupado) {
+                    transaccion.commit();
+                    return RegistroTutor.DUPLICADO;
+                }
+                Usuario existente = em.createQuery(
+                                "select u from Usuario u where u.cif = :cif", Usuario.class)
+                        .setParameter("cif", estudiante.cif())
+                        .getSingleResultOrNull();
+                if (existente != null) {
+                    if (!existente.isActivo() || !"ESTUDIANTE".equals(existente.getRol())) {
+                        transaccion.commit();
+                        return RegistroTutor.DUPLICADO;
+                    }
+                    existente.habilitarComoTutor(estudiante);
                     transaccion.commit();
                     return RegistroTutor.HABILITADO;
                 }
-                if (clave == null) {
-                    boolean existe = em.createQuery(
-                                    "select count(u) from Usuario u where u.cif = :cif", Long.class)
-                            .setParameter("cif", estudiante.cif()).getSingleResult() > 0;
+                if (clave == null || clave.isBlank()) {
                     transaccion.commit();
-                    return existe ? RegistroTutor.DUPLICADO : RegistroTutor.REQUIERE_CLAVE;
+                    return RegistroTutor.REQUIERE_CLAVE;
                 }
-                int insertados = em.createNativeQuery("""
-                        insert into mentorsync_seguridad.usuarios
-                            (carnet, nombre, correo, password, rol, carrera, promedio, horas_acumuladas, activo)
-                        values (:cif, :nombre, :correo, :clave, 'TUTOR', :carrera, :promedio, 0, true)
-                        on conflict do nothing
-                        """)
-                        .setParameter("cif", estudiante.cif())
-                        .setParameter("nombre", estudiante.nombre())
-                        .setParameter("correo", estudiante.correo())
-                        .setParameter("clave", clave)
-                        .setParameter("carrera", estudiante.carrera())
-                        .setParameter("promedio", estudiante.promedio())
-                        .executeUpdate();
+                em.persist(Usuario.crearTutor(estudiante, clave));
                 transaccion.commit();
-                return insertados == 1 ? RegistroTutor.CREADO : RegistroTutor.DUPLICADO;
+                return RegistroTutor.CREADO;
             } catch (RuntimeException e) {
                 if (transaccion.isActive()) {
-                    transaccion.rollback();
+                    try {
+                        transaccion.rollback();
+                    } catch (RuntimeException rollbackError) {
+                        e.addSuppressed(rollbackError);
+                    }
                 }
                 throw e;
             }

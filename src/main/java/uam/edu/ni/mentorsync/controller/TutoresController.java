@@ -3,6 +3,7 @@ package uam.edu.ni.mentorsync.controller;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -22,6 +23,8 @@ import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 public class TutoresController {
+    private static final System.Logger LOGGER = System.getLogger(TutoresController.class.getName());
+
     @FXML private TextField txtCarnetBusqueda;
     @FXML private TextField txtNombre;
     @FXML private TextField txtCorreo;
@@ -29,6 +32,7 @@ public class TutoresController {
     @FXML private TextField txtPromedio;
     @FXML private PasswordField txtPasswordTutor;
     @FXML private Label lblEstadoElegibilidad;
+    @FXML private Label lblEstadoTutores;
     @FXML private Button btnBuscarApi;
     @FXML private Button btnRegistrarTutor;
     @FXML private Button btnLimpiar;
@@ -42,6 +46,7 @@ public class TutoresController {
     private final UsuarioService usuarioService = new UsuarioService();
     private final EstudianteService estudianteService = new EstudianteService();
     private EstudianteApiDTO candidato;
+    private long versionCargaTutores;
 
     @FXML
     private void initialize() {
@@ -71,16 +76,22 @@ public class TutoresController {
         ejecutar(() -> estudianteService.buscar(cif), resultado -> resultado.ifPresentOrElse(
                 this::mostrarCandidato,
                 () -> lblEstadoElegibilidad.setText("No se encontró un estudiante con ese CIF.")),
-                () -> lblEstadoElegibilidad.setText("No se pudo consultar la API académica."));
+                error -> mostrarError("No se pudo consultar la API académica.", error));
     }
 
     @FXML
     private void handleRegistrarTutor() {
         EstudianteApiDTO estudiante = candidato;
         String clave = txtPasswordTutor.getText();
-        if (estudiante == null || !usuarioService.esElegible(estudiante)) {
+        if (estudiante == null) {
+            lblEstadoElegibilidad.setText("Consulta primero el CIF del estudiante.");
             return;
         }
+        if (!usuarioService.esElegible(estudiante)) {
+            lblEstadoElegibilidad.setText("Se requiere un estudiante activo con promedio de 85 o más.");
+            return;
+        }
+        lblEstadoElegibilidad.setText("Registrando tutor...");
         ejecutar(() -> usuarioService.registrarTutor(estudiante, clave), resultado -> {
             switch (resultado) {
                 case DUPLICADO -> lblEstadoElegibilidad.setText("El CIF o correo ya está registrado.");
@@ -93,7 +104,7 @@ public class TutoresController {
                     cargarTutores();
                 }
             }
-        }, () -> lblEstadoElegibilidad.setText("No se pudo registrar el tutor en PostgreSQL."));
+        }, error -> mostrarError("No se pudo registrar el tutor en PostgreSQL.", error));
     }
 
     @FXML
@@ -126,35 +137,79 @@ public class TutoresController {
 
     private void actualizarBotones(boolean ocupado) {
         txtCarnetBusqueda.setDisable(ocupado);
+        txtPasswordTutor.setDisable(ocupado);
         btnBuscarApi.setDisable(ocupado);
         btnLimpiar.setDisable(ocupado);
         btnRegistrarTutor.setDisable(ocupado || candidato == null || !usuarioService.esElegible(candidato));
     }
 
+    @FXML
     private void cargarTutores() {
+        long version = ++versionCargaTutores;
+        lblEstadoTutores.setText("Cargando tutores...");
         tblTutores.setPlaceholder(new Label("Cargando tutores..."));
         Task<List<TutorResumen>> tarea = tarea(usuarioService::listarTutoresActivos);
         tarea.setOnSucceeded(event -> {
+            if (version != versionCargaTutores) {
+                return;
+            }
             tblTutores.getItems().setAll(tarea.getValue());
             tblTutores.setPlaceholder(new Label("No hay tutores activos."));
+            lblEstadoTutores.setText("Tutores activos: " + tarea.getValue().size());
         });
-        tarea.setOnFailed(event ->
-                tblTutores.setPlaceholder(new Label("No se pudo cargar el listado de tutores.")));
+        tarea.setOnFailed(event -> {
+            if (version != versionCargaTutores) {
+                return;
+            }
+            String mensaje = "No se pudo cargar el listado de tutores.";
+            lblEstadoTutores.setText(mensaje + " Puedes reintentar con Actualizar.");
+            tblTutores.setPlaceholder(new Label(mensaje));
+            mostrarAlertaError(mensaje, tarea.getException());
+        });
         iniciar(tarea);
     }
 
-    private <T> void ejecutar(Callable<T> operacion, Consumer<T> exito, Runnable fallo) {
+    private <T> void ejecutar(Callable<T> operacion, Consumer<T> exito, Consumer<Throwable> fallo) {
         actualizarBotones(true);
         Task<T> tarea = tarea(operacion);
         tarea.setOnSucceeded(event -> {
-            exito.accept(tarea.getValue());
-            actualizarBotones(false);
+            try {
+                exito.accept(tarea.getValue());
+            } finally {
+                actualizarBotones(false);
+            }
         });
         tarea.setOnFailed(event -> {
-            fallo.run();
-            actualizarBotones(false);
+            try {
+                fallo.accept(tarea.getException());
+            } finally {
+                actualizarBotones(false);
+            }
         });
+        tarea.setOnCancelled(event -> actualizarBotones(false));
         iniciar(tarea);
+    }
+
+    private void mostrarError(String mensaje, Throwable error) {
+        lblEstadoElegibilidad.setText(mensaje);
+        mostrarAlertaError(mensaje, error);
+    }
+
+    private void mostrarAlertaError(String mensaje, Throwable error) {
+        LOGGER.log(System.Logger.Level.ERROR, mensaje, error);
+        Throwable causa = error;
+        while (causa.getCause() != null && causa.getCause() != causa) {
+            causa = causa.getCause();
+        }
+        String detalle = causa.getMessage();
+        Alert alerta = new Alert(Alert.AlertType.ERROR);
+        if (lblEstadoElegibilidad.getScene() != null) {
+            alerta.initOwner(lblEstadoElegibilidad.getScene().getWindow());
+        }
+        alerta.setTitle("Gestión de tutores");
+        alerta.setHeaderText(mensaje);
+        alerta.setContentText(detalle == null || detalle.isBlank() ? causa.toString() : detalle);
+        alerta.show();
     }
 
     private static <T> Task<T> tarea(Callable<T> operacion) {

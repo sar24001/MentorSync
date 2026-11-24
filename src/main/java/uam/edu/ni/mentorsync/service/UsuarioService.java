@@ -32,7 +32,8 @@ public class UsuarioService {
         if (!esElegible(estudiante)) {
             throw new IllegalArgumentException("El estudiante no cumple los requisitos para ser tutor.");
         }
-        return usuarioDAO.registrarTutor(estudiante, clave.isBlank() ? null : ClaveUtil.generar(clave));
+        return usuarioDAO.registrarTutor(estudiante,
+                clave == null || clave.isBlank() ? null : ClaveUtil.generar(clave));
     }
 
     public List<TutorResumen> listarTutoresActivos() {
