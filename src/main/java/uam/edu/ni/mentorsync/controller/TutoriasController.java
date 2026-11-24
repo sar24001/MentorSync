@@ -19,6 +19,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ListView;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Dialog;
@@ -34,6 +37,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import uam.edu.ni.mentorsync.dao.TutoriaDAO.Datos;
 import uam.edu.ni.mentorsync.dao.TutoriaDAO.Detalle;
@@ -111,9 +115,11 @@ public class TutoriasController {
     private final UsuarioService servicioUsuarios = new UsuarioService();
     private final AsignaturaService servicioAsignaturas = new AsignaturaService();
 
+    private final Button btnConfirmarAsistencia = new Button("Confirmar asistencia");
     private Usuario actor;
     private Usuario tutorSeleccionado;
     private Usuario estudianteSeleccionado;
+    private List<Opcion> estudiantesDisponibles = List.of();
     private boolean ocupado;
     private int operacionesEnCurso;
     private final ObservableList<Fila> sesiones = FXCollections.observableArrayList();
@@ -125,6 +131,11 @@ public class TutoriasController {
         boolean coordinador = "COORDINADOR".equals(actor.getRol());
         boolean tutor = "TUTOR".equals(actor.getRol());
         boolean estudiante = "ESTUDIANTE".equals(actor.getRol());
+
+        ((Pane) btnMarcarRealizada.getParent()).getChildren().add(btnConfirmarAsistencia);
+        btnConfirmarAsistencia.setOnAction(event ->
+                cambiarSeleccionada(id -> servicio.confirmarAsistencia(actor, id)));
+        mostrarControl(btnConfirmarAsistencia, estudiante || tutor);
 
         mostrarControl(panelAgendar, coordinador);
         mostrarControl(btnCancelar, coordinador);
@@ -141,11 +152,18 @@ public class TutoriasController {
                 (observable, anterior, actual) -> actualizarBotones(ocupado));
 
         colFecha.setCellValueFactory(fila -> new ReadOnlyObjectWrapper<>(fila.getValue().fecha()));
-        colHorario.setCellValueFactory(fila -> new ReadOnlyObjectWrapper<>(fila.getValue().horario()));
+        colHorario.setCellValueFactory(fila -> new ReadOnlyObjectWrapper<>(fila.getValue().horario() + " · " + fila.getValue().modalidad() + (fila.getValue().grupal() ? " · Grupal" : "")));
         colAsignatura.setCellValueFactory(fila -> new ReadOnlyObjectWrapper<>(fila.getValue().asignatura()));
         colTutor.setCellValueFactory(fila -> new ReadOnlyObjectWrapper<>(fila.getValue().tutor()));
         colEstudiante.setCellValueFactory(fila -> new ReadOnlyObjectWrapper<>(fila.getValue().estudiante()));
-        colEstado.setCellValueFactory(fila -> new ReadOnlyObjectWrapper<>(fila.getValue().estado()));
+        colEstado.setCellValueFactory(fila -> {
+            Fila sesion = fila.getValue();
+            String estado = sesion.estado();
+            if ("REALIZADA".equals(estado)) {
+                estado += sesion.asistenciaConfirmada() ? " · Asistencia confirmada" : " · Asistencia pendiente";
+            }
+            return new ReadOnlyObjectWrapper<>(estado);
+        });
 
         SortedList<Fila> ordenadas = new SortedList<>(sesionesFiltradas);
         ordenadas.comparatorProperty().bind(tblTutorias.comparatorProperty());
@@ -340,7 +358,21 @@ public class TutoriasController {
             long tutorId = tutorSeleccionado.getId();
             long estudianteId = estudianteSeleccionado.getId();
 
-            ejecutar(() -> servicio.agendar(actor, tutorId, estudianteId, asignatura.id(), fecha, inicio, fin),
+            ChoiceDialog<String> dialogo = new ChoiceDialog<>("PRESENCIAL", "PRESENCIAL", "VIRTUAL");
+            dialogo.setTitle("Agendar tutoría");
+            dialogo.setHeaderText("Selecciona la modalidad");
+            dialogo.initOwner(tblTutorias.getScene().getWindow());
+            var modalidad = dialogo.showAndWait();
+            if (modalidad.isEmpty()) {
+                return;
+            }
+
+            var participantes = elegirParticipantes(tutorId, estudianteId);
+            if (participantes.isEmpty()) {
+                return;
+            }
+            ejecutar(() -> servicio.agendar(actor, tutorId, participantes.get(), asignatura.id(), fecha, inicio, fin,
+                            modalidad.get()),
                     mensaje -> {
                         mostrar(mensaje);
                         limpiarFormularioAgendar();
@@ -349,6 +381,31 @@ public class TutoriasController {
         } catch (DateTimeParseException e) {
             mostrar("Escribe las horas con formato HH:mm.");
         }
+    }
+
+    private java.util.Optional<List<Long>> elegirParticipantes(long tutor, long principal) {
+        var adicionales = new ListView<Opcion>();
+        adicionales.getItems().setAll(estudiantesDisponibles.stream()
+                .filter(estudiante -> estudiante.id() != tutor && estudiante.id() != principal).toList());
+        adicionales.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        adicionales.setPrefHeight(180);
+
+        Dialog<List<Long>> dialogo = new Dialog<>();
+        dialogo.setTitle("Participantes de la tutoría");
+        dialogo.setHeaderText("Selecciona estudiantes adicionales si la tutoría es grupal");
+        dialogo.initOwner(tblTutorias.getScene().getWindow());
+        dialogo.getDialogPane().setContent(adicionales);
+        dialogo.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        dialogo.setResultConverter(boton -> {
+            if (boton != ButtonType.OK) {
+                return null;
+            }
+            var participantes = new java.util.ArrayList<Long>();
+            participantes.add(principal);
+            adicionales.getSelectionModel().getSelectedItems().forEach(opcion -> participantes.add(opcion.id()));
+            return List.copyOf(participantes);
+        });
+        return dialogo.showAndWait();
     }
 
     private void limpiarFormularioAgendar() {
@@ -617,6 +674,7 @@ public class TutoriasController {
     }
 
     private void mostrarDatos(Datos datos) {
+        estudiantesDisponibles = datos.estudiantes();
         Fila seleccionada = tblTutorias.getSelectionModel().getSelectedItem();
         Opcion filtroAnterior = cmbFiltroAsignatura.getValue();
         if (tutorSeleccionado == null) {
@@ -732,7 +790,9 @@ public class TutoriasController {
 
         btnAgendar.setDisable(ocupado || !coordinador);
         btnCancelar.setDisable(ocupado || !coordinador || (!programada && !solicitudCancelacion));
-        btnValidarHoras.setDisable(ocupado || !coordinador || !realizada);
+        btnValidarHoras.setDisable(ocupado || !coordinador || !realizada || !seleccionada.asistenciaConfirmada());
+        btnConfirmarAsistencia.setDisable(ocupado || !realizada
+                || seleccionada.estudianteId() != actor.getId() || seleccionada.asistenciaConfirmada());
         btnMarcarRealizada.setDisable(ocupado || !puedeMarcar);
         btnSolicitarCancelacion.setDisable(ocupado || !estudiante || !programada);
         btnCalificarTutor.setDisable(ocupado || !estudiante || !completada);

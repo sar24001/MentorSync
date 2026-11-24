@@ -22,6 +22,10 @@ public class SeguimientoDAO {
             return em.createQuery("""
                     from Tutoria t
                     where t.tutor.id = :tutorId and t.estado = 'VALIDADA'
+                      and (t.grupoId is null or not exists (
+                          select 1 from Tutoria miembro
+                          where miembro.grupoId = t.grupoId and miembro.estado = 'VALIDADA' and miembro.id < t.id
+                      ))
                     order by t.fecha, t.id
                     """, Tutoria.class).setParameter("tutorId", tutorId).getResultList();
         }

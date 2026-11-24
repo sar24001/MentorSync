@@ -6,6 +6,7 @@ import uam.edu.ni.mentorsync.model.Usuario;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Optional;
+import java.util.List;
 import java.util.Set;
 
 public class TutoriaService {
@@ -48,16 +49,22 @@ public class TutoriaService {
                         + "La sesión puede haber cambiado de estado o ya no existir.");
     }
 
-    public String agendar(Usuario actor, long tutor, long estudiante, long materia,
-                          LocalDate fecha, LocalTime inicio, LocalTime fin) {
+    public String agendar(Usuario actor, long tutor, List<Long> estudiantes, long materia,
+                          LocalDate fecha, LocalTime inicio, LocalTime fin, String modalidad) {
         exigirRol(actor, "COORDINADOR");
-        if (tutor == estudiante) {
+        if (!"PRESENCIAL".equals(modalidad) && !"VIRTUAL".equals(modalidad)) {
+            return "Selecciona una modalidad válida.";
+        }
+        if (estudiantes.isEmpty() || estudiantes.stream().distinct().count() != estudiantes.size()) {
+            return "Selecciona estudiantes distintos para la tutoría.";
+        }
+        if (estudiantes.contains(tutor)) {
             return "El tutor y el estudiante deben ser personas distintas.";
         }
         if (!horarioValido(fecha, inicio, fin)) {
             return "Revisa la fecha y asegúrate de que el fin sea posterior al inicio.";
         }
-        return dao.agendar(tutor, estudiante, materia, fecha, inicio, fin)
+        return dao.agendar(tutor, estudiantes, materia, fecha, inicio, fin, modalidad)
                 ? "Tutoría agendada." : "Hay un choque de horario o algún dato ya no está disponible.";
     }
 
@@ -108,9 +115,18 @@ public class TutoriaService {
                 ? "Tutoría marcada como realizada." : "La tutoría debe estar programada, asignada a ti y haber terminado.";
     }
 
+    public String confirmarAsistencia(Usuario actor, long id) {
+        exigirUsuario(actor);
+        if (!Set.of("ESTUDIANTE", "TUTOR").contains(actor.getRol())) {
+            throw new IllegalStateException("Solo el estudiante de la tutoría puede confirmar su asistencia.");
+        }
+        return dao.confirmarAsistencia(id, actor.getId()) ? "Asistencia confirmada."
+                : "La tutoría debe estar realizada, asignada a ti y pendiente de confirmación.";
+    }
+
     public String validarHoras(Usuario actor, long id) {
         exigirRol(actor, "COORDINADOR");
-        return dao.validarHoras(id) ? "Horas validadas." : "Solo se pueden validar tutorías realizadas una vez.";
+        return dao.validarHoras(id) ? "Horas validadas." : "Para validar las horas, todos los participantes de la sesión deben haber confirmado su asistencia.";
     }
 
     private void exigirRol(Usuario actor, String rol) {

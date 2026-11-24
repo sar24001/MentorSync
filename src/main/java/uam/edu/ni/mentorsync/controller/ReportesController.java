@@ -175,6 +175,14 @@ public class ReportesController {
     @FXML
     private void handleGenerarReporteRendimiento(ActionEvent event) {
         if (listaTutorias.isEmpty()) return;
+        Optional<List<Tutoria>> seleccion = elegirFiltrosRendimiento();
+        if (seleccion.isEmpty()) return;
+        List<Tutoria> resultados = seleccion.get();
+        if (resultados.isEmpty()) {
+            mostrarAlerta(Alert.AlertType.INFORMATION, "Sin resultados",
+                    "No hay tutorías que coincidan con los filtros.");
+            return;
+        }
 
         Optional<String> formatoOpt = elegirFormato("Reporte de Rendimiento Académico");
         if (formatoOpt.isEmpty()) return;
@@ -187,15 +195,62 @@ public class ReportesController {
 
         try {
             if (esPdf) {
-                reporteService.exportarRendimientoPDF(listaTutorias, destino);
+                reporteService.exportarRendimientoPDF(resultados, destino);
             } else {
-                reporteService.exportarRendimientoExcel(listaTutorias, destino);
+                reporteService.exportarRendimientoExcel(resultados, destino);
             }
             mostrarAlerta(Alert.AlertType.INFORMATION, "Reporte Generado",
                     "Archivo guardado exitosamente en:\n" + destino.getAbsolutePath());
         } catch (Exception e) {
             mostrarAlerta(Alert.AlertType.ERROR, "Error al exportar", e.getMessage());
         }
+    }
+
+    private Optional<List<Tutoria>> elegirFiltrosRendimiento() {
+        ComboBox<String> semestre = filtro("Todos los semestres", listaTutorias.stream()
+                .map(this::semestreDe).distinct().sorted().toList());
+        ComboBox<String> carrera = filtro("Todas las carreras", listaTutorias.stream()
+                .map(tutoria -> tutoria.getEstudiante().getCarrera())
+                .filter(nombre -> nombre != null && !nombre.isBlank()).distinct().sorted().toList());
+        ComboBox<String> asignatura = filtro("Todas las asignaturas", listaTutorias.stream()
+                .map(tutoria -> tutoria.getAsignatura().toString()).distinct().sorted().toList());
+
+        Dialog<List<Tutoria>> dialogo = new Dialog<>();
+        dialogo.setTitle("Reporte de rendimiento");
+        dialogo.setHeaderText("Filtrar las tutorías para exportar");
+        dialogo.initOwner(tblRendimiento.getScene().getWindow());
+
+        var campos = new javafx.scene.layout.GridPane();
+        campos.setHgap(12);
+        campos.setVgap(8);
+        campos.addRow(0, new Label("Semestre"), semestre);
+        campos.addRow(1, new Label("Carrera del estudiante"), carrera);
+        campos.addRow(2, new Label("Asignatura"), asignatura);
+        dialogo.getDialogPane().setContent(campos);
+        dialogo.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        dialogo.setResultConverter(boton -> boton == ButtonType.OK ? listaTutorias.stream()
+                .filter(tutoria -> coincide(semestre, semestreDe(tutoria)))
+                .filter(tutoria -> coincide(carrera, tutoria.getEstudiante().getCarrera()))
+                .filter(tutoria -> coincide(asignatura, tutoria.getAsignatura().toString()))
+                .toList() : null);
+        return dialogo.showAndWait();
+    }
+
+    private ComboBox<String> filtro(String opcionGeneral, List<String> opciones) {
+        ComboBox<String> filtro = new ComboBox<>();
+        filtro.getItems().add(opcionGeneral);
+        filtro.getItems().addAll(opciones);
+        filtro.getSelectionModel().selectFirst();
+        return filtro;
+    }
+
+    private boolean coincide(ComboBox<String> filtro, String valor) {
+        return filtro.getSelectionModel().getSelectedIndex() == 0 || filtro.getValue().equals(valor);
+    }
+
+    private String semestreDe(Tutoria tutoria) {
+        var fecha = tutoria.getFecha();
+        return fecha.getYear() + (fecha.getMonthValue() <= 6 ? " - I" : " - II");
     }
 
     private Optional<String> elegirFormato(String tituloReporte) {

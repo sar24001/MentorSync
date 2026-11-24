@@ -11,4 +11,11 @@ CREATE TABLE IF NOT EXISTS mentorsync_academico.tutor_asignaturas (
 ALTER TABLE mentorsync_academico.tutorias
     ADD COLUMN IF NOT EXISTS calificacion_tutor INTEGER,
     ADD COLUMN IF NOT EXISTS comentario_estudiante VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS motivo_cancelacion VARCHAR(255);
+    ADD COLUMN IF NOT EXISTS motivo_cancelacion VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS confirmada_estudiante BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS modalidad VARCHAR(12) NOT NULL DEFAULT 'PRESENCIAL'
+        CHECK (modalidad IN ('PRESENCIAL', 'VIRTUAL')),
+    ADD COLUMN IF NOT EXISTS grupo_id UUID;
+
+CREATE INDEX IF NOT EXISTS idx_tutorias_grupo
+    ON mentorsync_academico.tutorias (grupo_id) WHERE grupo_id IS NOT NULL;
