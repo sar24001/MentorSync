@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<HBox spacing="20.0" style="-fx-background-color: #f8fafc;" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uam.edu.ni.mentorsync.controller.TutoresController">
+
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+
+    <!-- Panel Izquierdo: Consulta API y Registro -->
+    <VBox prefWidth="340.0" spacing="10.0" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8;">
+        <padding>
+            <Insets bottom="18.0" left="18.0" right="18.0" top="18.0" />
+        </padding>
+
+        <Label text="Registro de Tutor" textFill="#1e3a8a">
+            <font>
+                <Font name="System Bold" size="16.0" />
+            </font>
+        </Label>
+
+        <Label text="Carnet del Estudiante" />
+        <HBox spacing="8.0">
+            <TextField fx:id="txtCarnetBusqueda" promptText="Ej. 20220104" HBox.hgrow="ALWAYS" />
+            <Button fx:id="btnBuscarApi" disable="true" onAction="#handleBuscarApi" style="-fx-background-color: #0284c7; -fx-text-fill: white; -fx-font-weight: bold;" text="Consultar" />
+        </HBox>
+
+        <Separator />
+
+        <Label text="Nombre Completo" />
+        <TextField fx:id="txtNombre" editable="false" style="-fx-background-color: #f1f5f9;" />
+
+        <Label text="Correo Institucional" />
+        <TextField fx:id="txtCorreo" editable="false" style="-fx-background-color: #f1f5f9;" />
+
+        <Label text="Carrera" />
+        <TextField fx:id="txtCarrera" editable="false" style="-fx-background-color: #f1f5f9;" />
+
+        <Label text="Promedio General" />
+        <TextField fx:id="txtPromedio" editable="false" style="-fx-background-color: #f1f5f9;" />
+
+        <Label fx:id="lblEstadoElegibilidad" text="Pendiente de consulta..." textFill="#64748b" wrapText="true">
+            <font>
+                <Font name="System Bold" size="12.0" />
+            </font>
+        </Label>
+
+        <Label text="Contraseña Asignada" />
+        <PasswordField fx:id="txtPasswordTutor" promptText="Clave de acceso al sistema" />
+
+        <HBox spacing="10.0">
+            <Button fx:id="btnRegistrarTutor" maxWidth="Infinity" disable="true" onAction="#handleRegistrarTutor" style="-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold;" text="Registrar Tutor" HBox.hgrow="ALWAYS" />
+            <Button fx:id="btnLimpiar" disable="true" onAction="#handleLimpiar" text="Limpiar" />
+        </HBox>
+    </VBox>
+
+    <!-- Panel Derecho: Tabla de Tutores Activos -->
+    <VBox spacing="10.0" HBox.hgrow="ALWAYS">
+        <Label text="Tutores Habilitados en el Sistema" textFill="#1e293b">
+            <font>
+                <Font name="System Bold" size="16.0" />
+            </font>
+        </Label>
+
+        <TableView fx:id="tblTutores" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="colCarnet" prefWidth="100.0" text="Carnet" />
+                <TableColumn fx:id="colNombre" prefWidth="190.0" text="Nombre" />
+                <TableColumn fx:id="colCarrera" prefWidth="160.0" text="Carrera" />
+                <TableColumn fx:id="colPromedio" prefWidth="85.0" text="Promedio" />
+                <TableColumn fx:id="colHoras" prefWidth="110.0" text="Horas Validadas" />
+            </columns>
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+            </columnResizePolicy>
+        </TableView>
+    </VBox>
+</HBox>

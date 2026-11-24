@@ -1,16 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
 
-<?import javafx.scene.control.Button?>
-<VBox alignment="CENTER" spacing="20.0" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="uam.edu.ni.mentorsync.HelloController">
+<VBox alignment="CENTER" prefHeight="440.0" prefWidth="400.0" spacing="18.0"
+      style="-fx-background-color: #f1f5f9;"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="uam.edu.ni.mentorsync.controller.LoginController">
+
     <padding>
-        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+        <Insets bottom="30.0" left="35.0" right="35.0" top="30.0"/>
     </padding>
 
-    <Label fx:id="welcomeText"/>
-    <Button text="Hello!" onAction="#onHelloButtonClick"/>
+    <VBox alignment="CENTER" spacing="6.0">
+        <Label text="MentorSync" textFill="#1e3a8a">
+            <font>
+                <Font name="System Bold" size="28.0"/>
+            </font>
+        </Label>
+        <Label text="Sistema de Gestión de Tutorías Académicas" textFill="#64748b"/>
+    </VBox>
+
+    <VBox spacing="12.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10;">
+        <padding>
+            <Insets bottom="25.0" left="25.0" right="25.0" top="25.0"/>
+        </padding>
+
+        <Label text="CIF" textFill="#334155">
+            <font>
+                <Font name="System Bold" size="12.0"/>
+            </font>
+        </Label>
+        <TextField fx:id="txtCarnet" prefHeight="36.0" promptText="Ej. 25001234"/>
+
+        <Label text="Contraseña" textFill="#334155">
+            <font>
+                <Font name="System Bold" size="12.0"/>
+            </font>
+        </Label>
+        <PasswordField fx:id="txtPassword" prefHeight="36.0" promptText="••••••••"/>
+
+        <Label fx:id="lblError" textFill="#dc2626" wrapText="true"/>
+
+        <Button fx:id="btnIngresar" defaultButton="true" maxWidth="Infinity" prefHeight="38.0"
+                onAction="#handleIngresar"
+                style="-fx-background-color: #1e3a8a; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"
+                text="Iniciar Sesión"/>
+    </VBox>
 </VBox>
