@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<HBox spacing="20.0" style="-fx-background-color: #f8fafc;"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="uam.edu.ni.mentorsync.controller.ReportesController">
+
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+    </padding>
+
+    <!-- Panel Izquierdo: Registro de Notas y Exportación PDF/Excel -->
+    <VBox prefWidth="340.0" spacing="14.0">
+
+        <!-- Tarjeta 1: Seguimiento de Calificaciones -->
+        <VBox spacing="10.0"
+              style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8;">
+            <padding>
+                <Insets bottom="16.0" left="16.0" right="16.0" top="16.0"/>
+            </padding>
+
+            <Label text="Evaluación de Rendimiento" textFill="#1e3a8a">
+                <font>
+                    <Font name="System Bold" size="15.0"/>
+                </font>
+            </Label>
+
+            <Label text="Sesión (Realizada / Validada)"/>
+            <ComboBox fx:id="cmbTutoriaEvaluar" maxWidth="Infinity" promptText="Seleccione sesión"/>
+
+            <HBox spacing="10.0">
+                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                    <Label text="Nota Inicial"/>
+                    <TextField fx:id="txtNotaInicial" promptText="Ej. 58.0"/>
+                </VBox>
+                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                    <Label text="Nota Final"/>
+                    <TextField fx:id="txtNotaFinal" promptText="Ej. 82.0"/>
+                </VBox>
+            </HBox>
+
+            <Label text="Observaciones"/>
+            <TextField fx:id="txtObservaciones" promptText="Ej. Aprobó segundo parcial"/>
+
+            <Button fx:id="btnGuardarNotas" maxWidth="Infinity" disable="true" onAction="#handleGuardarNotas"
+                    style="-fx-background-color: #1e3a8a; -fx-text-fill: white; -fx-font-weight: bold;"
+                    text="Guardar Calificaciones"/>
+        </VBox>
+
+        <!-- Tarjeta 2: Descarga de Documentos -->
+        <VBox spacing="10.0"
+              style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8;">
+            <padding>
+                <Insets bottom="16.0" left="16.0" right="16.0" top="16.0"/>
+            </padding>
+
+            <Label text="Generación de Reportes" textFill="#1e3a8a">
+                <font>
+                    <Font name="System Bold" size="15.0"/>
+                </font>
+            </Label>
+
+            <Label text="Tutor para Constancia de Horas"/>
+            <ComboBox fx:id="cmbTutorReporte" maxWidth="Infinity" promptText="Seleccione tutor"/>
+
+            <Button fx:id="btnReporteHoras" maxWidth="Infinity" disable="true" onAction="#handleGenerarReporteHoras"
+                    style="-fx-background-color: #0284c7; -fx-text-fill: white; -fx-font-weight: bold;"
+                    text="Descargar Constancia de Horas"/>
+
+            <Separator/>
+
+            <Button fx:id="btnReporteRendimiento" maxWidth="Infinity" disable="true" onAction="#handleGenerarReporteRendimiento"
+                    style="-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold;"
+                    text="Descargar Reporte de Rendimiento"/>
+        </VBox>
+    </VBox>
+
+    <!-- Panel Derecho: Tabla Comparativa de Notas -->
+    <VBox spacing="10.0" HBox.hgrow="ALWAYS">
+        <Label text="Impacto Académico por Estudiante" textFill="#1e293b">
+            <font>
+                <Font name="System Bold" size="16.0"/>
+            </font>
+        </Label>
+
+        <!-- Barra de filtros del reporte de rendimiento -->
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <ComboBox fx:id="cmbFiltroAsignatura" prefWidth="190.0" promptText="Asignatura: Todas"/>
+            <ComboBox fx:id="cmbFiltroCarrera" prefWidth="170.0" promptText="Carrera: Todas"/>
+            <DatePicker fx:id="dpFiltroDesde" prefWidth="125.0" promptText="Desde"/>
+            <DatePicker fx:id="dpFiltroHasta" prefWidth="125.0" promptText="Hasta"/>
+            <Button fx:id="btnLimpiarFiltros" onAction="#handleLimpiarFiltros" text="Limpiar"/>
+        </HBox>
+
+        <TableView fx:id="tblRendimiento" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="colEstudiante" prefWidth="150.0" text="Estudiante"/>
+                <TableColumn fx:id="colAsignatura" prefWidth="140.0" text="Asignatura"/>
+                <TableColumn fx:id="colTutor" prefWidth="140.0" text="Tutor"/>
+                <TableColumn fx:id="colNotaInicial" prefWidth="90.0" text="Nota Inicial"/>
+                <TableColumn fx:id="colNotaFinal" prefWidth="90.0" text="Nota Final"/>
+                <TableColumn fx:id="colObservaciones" prefWidth="160.0" text="Observaciones"/>
+            </columns>
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+            </columnResizePolicy>
+        </TableView>
+    </VBox>
+</HBox>

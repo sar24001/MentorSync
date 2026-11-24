@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane prefHeight="680.0" prefWidth="1050.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="uam.edu.ni.mentorsync.controller.PrincipalController">
+
+    <!-- Barra superior -->
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: #1e3a8a;">
+            <padding>
+                <Insets bottom="12.0" left="20.0" right="20.0" top="12.0" />
+            </padding>
+
+            <Label text="MentorSync" textFill="WHITE">
+                <font>
+                    <Font name="System Bold" size="20.0" />
+                </font>
+            </Label>
+
+            <Region HBox.hgrow="ALWAYS" />
+
+            <Label fx:id="lblUsuarioInfo" text="Usuario " textFill="#e2e8f0">
+                <font>
+                    <Font size="13.0" />
+                </font>
+            </Label>
+
+            <Button onAction="#handleCerrarSesion" style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;" text="Cerrar Sesión" />
+        </HBox>
+    </top>
+
+    <!-- Contenedor de pestañas independientes -->
+    <center>
+        <TabPane fx:id="tabPanePrincipal" tabClosingPolicy="UNAVAILABLE">
+            <tabs>
+                <Tab fx:id="tabTutores" text="Gestión de Tutores">
+                    <fx:include source="tab-tutores.fxml" />
+                </Tab>
+                <Tab fx:id="tabTutorias" text="Sesiones y Horas">
+                    <fx:include source="tab-tutorias.fxml" />
+                </Tab>
+                <Tab fx:id="tabReportes" text="Impacto y Reportes">
+                    <fx:include source="tab-reportes.fxml" />
+                </Tab>
+            </tabs>
+        </TabPane>
+    </center>
+</BorderPane>
