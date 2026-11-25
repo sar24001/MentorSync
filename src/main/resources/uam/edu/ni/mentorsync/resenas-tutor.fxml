@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox prefWidth="720.0" prefHeight="460.0" minWidth="480.0" minHeight="300.0" spacing="12.0"
+      style="-fx-background-color: #f8fafc;"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="uam.edu.ni.mentorsync.controller.ResenasTutorController">
+    <padding>
+        <Insets top="16.0" right="16.0" bottom="16.0" left="16.0" />
+    </padding>
+    <Label fx:id="lblResumen" text="Valoraciones de los estudiantes" wrapText="true"
+           style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1e3a8a;" />
+    <HBox alignment="CENTER_LEFT" spacing="10.0">
+        <ProgressIndicator fx:id="progreso" prefWidth="22.0" prefHeight="22.0" />
+        <Label fx:id="lblEstado" text="Cargando reseñas..." wrapText="true" HBox.hgrow="ALWAYS" />
+        <Button fx:id="btnReintentar" text="Reintentar" onAction="#cargarResenas" visible="false" managed="false" />
+    </HBox>
+    <ListView fx:id="lstResenas" minHeight="150.0" VBox.vgrow="ALWAYS"
+              style="-fx-background-color: transparent; -fx-padding: 0;" />
+</VBox>

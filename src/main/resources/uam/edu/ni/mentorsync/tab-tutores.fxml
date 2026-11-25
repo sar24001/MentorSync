@@ -12,71 +12,86 @@
     </padding>
 
     <!-- Panel Izquierdo: Consulta API y Registro -->
-    <VBox prefWidth="340.0" spacing="10.0" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8;">
-        <padding>
-            <Insets bottom="18.0" left="18.0" right="18.0" top="18.0" />
-        </padding>
+    <ScrollPane fitToWidth="true" hbarPolicy="NEVER" minWidth="300.0" prefWidth="300.0" maxWidth="300.0" style="-fx-background-color: transparent;">
+        <VBox spacing="10.0" style="-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8;">
+            <padding>
+                <Insets bottom="18.0" left="18.0" right="18.0" top="18.0" />
+            </padding>
 
-        <Label text="Registro de Tutor" textFill="#1e3a8a">
-            <font>
-                <Font name="System Bold" size="16.0" />
-            </font>
-        </Label>
+            <Label text="Registro de Tutor" textFill="#1e3a8a">
+                <font>
+                    <Font name="System Bold" size="16.0" />
+                </font>
+            </Label>
 
-        <Label text="Carnet del Estudiante" />
-        <HBox spacing="8.0">
-            <TextField fx:id="txtCarnetBusqueda" promptText="Ej. 20220104" HBox.hgrow="ALWAYS" />
-            <Button fx:id="btnBuscarApi" disable="true" onAction="#handleBuscarApi" style="-fx-background-color: #0284c7; -fx-text-fill: white; -fx-font-weight: bold;" text="Consultar" />
-        </HBox>
+            <Label text="Carnet del Estudiante" />
+            <HBox spacing="8.0">
+                <TextField fx:id="txtCarnetBusqueda" promptText="Ej. 20220104" HBox.hgrow="ALWAYS" />
+                <Button fx:id="btnBuscarApi" disable="true" onAction="#handleBuscarApi" style="-fx-background-color: #0284c7; -fx-text-fill: white; -fx-font-weight: bold;" text="Consultar" />
+            </HBox>
 
-        <Separator />
+            <Separator />
 
-        <Label text="Nombre Completo" />
-        <TextField fx:id="txtNombre" editable="false" style="-fx-background-color: #f1f5f9;" />
+            <Label text="Nombre Completo" />
+            <TextField fx:id="txtNombre" editable="false" style="-fx-background-color: #f1f5f9;" />
 
-        <Label text="Correo Institucional" />
-        <TextField fx:id="txtCorreo" editable="false" style="-fx-background-color: #f1f5f9;" />
+            <Label text="Correo Institucional" />
+            <TextField fx:id="txtCorreo" editable="false" style="-fx-background-color: #f1f5f9;" />
 
-        <Label text="Carrera" />
-        <TextField fx:id="txtCarrera" editable="false" style="-fx-background-color: #f1f5f9;" />
+            <Label text="Carrera" />
+            <TextField fx:id="txtCarrera" editable="false" style="-fx-background-color: #f1f5f9;" />
 
-        <Label text="Promedio General" />
-        <TextField fx:id="txtPromedio" editable="false" style="-fx-background-color: #f1f5f9;" />
+            <Label text="Promedio General" />
+            <TextField fx:id="txtPromedio" editable="false" style="-fx-background-color: #f1f5f9;" />
 
-        <Label fx:id="lblEstadoElegibilidad" text="Pendiente de consulta..." textFill="#64748b" wrapText="true">
-            <font>
-                <Font name="System Bold" size="12.0" />
-            </font>
-        </Label>
+            <Label fx:id="lblEstadoElegibilidad" text="Pendiente de consulta..." textFill="#64748b" wrapText="true">
+                <font>
+                    <Font name="System Bold" size="12.0" />
+                </font>
+            </Label>
 
-        <Label text="Contraseña Asignada" />
-        <PasswordField fx:id="txtPasswordTutor" promptText="Clave de acceso al sistema" />
+            <Label text="Contraseña Asignada" />
+            <PasswordField fx:id="txtPasswordTutor" promptText="Clave de acceso al sistema" />
 
-        <HBox spacing="10.0">
-            <Button fx:id="btnRegistrarTutor" maxWidth="Infinity" disable="true" onAction="#handleRegistrarTutor" style="-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold;" text="Registrar Tutor" HBox.hgrow="ALWAYS" />
-            <Button fx:id="btnLimpiar" disable="true" onAction="#handleLimpiar" text="Limpiar" />
-        </HBox>
-    </VBox>
+            <HBox spacing="10.0">
+                <Button fx:id="btnRegistrarTutor" maxWidth="Infinity" disable="true" onAction="#handleRegistrarTutor" style="-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold;" text="Registrar Tutor" HBox.hgrow="ALWAYS" />
+                <Button fx:id="btnLimpiar" disable="true" onAction="#handleLimpiar" text="Limpiar" />
+            </HBox>
+        </VBox>
+    </ScrollPane>
 
     <!-- Panel Derecho: Tabla de Tutores Activos -->
-    <VBox spacing="10.0" HBox.hgrow="ALWAYS">
-        <Label text="Tutores Habilitados en el Sistema" textFill="#1e293b">
-            <font>
-                <Font name="System Bold" size="16.0" />
-            </font>
-        </Label>
+    <VBox minWidth="0.0" spacing="10.0" HBox.hgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <Label text="Tutores Habilitados en el Sistema" textFill="#1e293b">
+                <font>
+                    <Font name="System Bold" size="16.0" />
+                </font>
+            </Label>
+            <Region HBox.hgrow="ALWAYS" />
+            <Button onAction="#cargarTutores" text="Actualizar" />
+        </HBox>
+        <CheckBox fx:id="chkMostrarInactivos" text="Mostrar inactivos"/>
+        <Label fx:id="lblEstadoTutores" text="Cargando tutores..." textFill="#64748b" wrapText="true" />
 
-        <TableView fx:id="tblTutores" VBox.vgrow="ALWAYS">
+        <TableView fx:id="tblTutores" minWidth="0.0" minHeight="200.0" VBox.vgrow="ALWAYS">
             <columns>
-                <TableColumn fx:id="colCarnet" prefWidth="100.0" text="Carnet" />
-                <TableColumn fx:id="colNombre" prefWidth="190.0" text="Nombre" />
-                <TableColumn fx:id="colCarrera" prefWidth="160.0" text="Carrera" />
-                <TableColumn fx:id="colPromedio" prefWidth="85.0" text="Promedio" />
-                <TableColumn fx:id="colHoras" prefWidth="110.0" text="Horas Validadas" />
+                <TableColumn fx:id="colCarnet" minWidth="70.0" prefWidth="85.0" text="Carnet" />
+                <TableColumn fx:id="colNombre" minWidth="90.0" prefWidth="140.0" text="Nombre" />
+                <TableColumn fx:id="colCarrera" minWidth="80.0" prefWidth="120.0" text="Carrera" />
+                <TableColumn fx:id="colPromedio" minWidth="60.0" prefWidth="80.0" text="Promedio" />
+                <TableColumn fx:id="colHoras" minWidth="60.0" prefWidth="90.0" text="Horas Validadas" />
+                <TableColumn fx:id="colPuntuacion" minWidth="85.0" prefWidth="95.0" text="Puntuación" />
+                <TableColumn fx:id="colEstado" minWidth="65.0" prefWidth="75.0" text="Estado" />
+                <TableColumn fx:id="colResenas" minWidth="145.0" prefWidth="155.0" text="Reseñas" sortable="false" />
             </columns>
             <columnResizePolicy>
                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
             </columnResizePolicy>
         </TableView>
+        <FlowPane hgap="8.0" vgap="8.0">
+            <Button fx:id="btnEstadoTutor" text="Desactivar Tutor" onAction="#handleEstadoTutor" disable="true"/>
+            <Button fx:id="btnMateriasTutor" text="Gestionar materias" onAction="#handleMateriasTutor" disable="true"/>
+        </FlowPane>
     </VBox>
 </HBox>

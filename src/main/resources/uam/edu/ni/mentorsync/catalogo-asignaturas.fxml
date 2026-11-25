@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox spacing="12" prefWidth="720" prefHeight="480" xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1" fx:controller="uam.edu.ni.mentorsync.controller.AsignaturasController">
+    <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <CheckBox fx:id="chkInactivas" text="Mostrar materias inactivas"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnActualizar" text="Actualizar" onAction="#cargar"/>
+    </HBox>
+    <TableView fx:id="tblMaterias" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colCodigo" text="Código" prefWidth="120"/>
+            <TableColumn fx:id="colNombre" text="Nombre" prefWidth="420"/>
+            <TableColumn fx:id="colEstado" text="Estado" prefWidth="100"/>
+        </columns>
+        <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
+    </TableView>
+    <HBox spacing="10">
+        <VBox spacing="4"><Label text="Código"/><TextField fx:id="txtCodigo" promptText="SIS-201"/></VBox>
+        <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Nombre"/><TextField fx:id="txtNombre" promptText="Nombre de la materia"/></VBox>
+    </HBox>
+    <FlowPane hgap="8" vgap="8">
+        <Button fx:id="btnNueva" text="Nueva materia" onAction="#handleNueva"/>
+        <Button fx:id="btnGuardar" text="Guardar" onAction="#handleGuardar"/>
+        <Button fx:id="btnEstado" text="Desactivar materia" onAction="#handleEstado"/>
+    </FlowPane>
+    <Label fx:id="lblMensaje" wrapText="true"/>
+</VBox>
