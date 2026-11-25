@@ -87,6 +87,15 @@
             </font>
         </Label>
 
+        <!-- Barra de filtros del reporte de rendimiento -->
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <ComboBox fx:id="cmbFiltroAsignatura" prefWidth="190.0" promptText="Asignatura: Todas"/>
+            <ComboBox fx:id="cmbFiltroCarrera" prefWidth="170.0" promptText="Carrera: Todas"/>
+            <DatePicker fx:id="dpFiltroDesde" prefWidth="125.0" promptText="Desde"/>
+            <DatePicker fx:id="dpFiltroHasta" prefWidth="125.0" promptText="Hasta"/>
+            <Button fx:id="btnLimpiarFiltros" onAction="#handleLimpiarFiltros" text="Limpiar"/>
+        </HBox>
+
         <TableView fx:id="tblRendimiento" VBox.vgrow="ALWAYS">
             <columns>
                 <TableColumn fx:id="colEstudiante" prefWidth="150.0" text="Estudiante"/>
