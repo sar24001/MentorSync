@@ -19,7 +19,7 @@ import javafx.stage.Stage;
 import uam.edu.ni.mentorsync.MentorSyncApplication;
 import uam.edu.ni.mentorsync.model.Usuario;
 import uam.edu.ni.mentorsync.service.UsuarioService;
-import uam.edu.ni.mentorsync.service.RecuperacionService;
+import uam.edu.ni.mentorsync.service.ClienteRecuperacion;
 import uam.edu.ni.mentorsync.util.SesionActual;
 
 import java.io.IOException;
@@ -33,7 +33,7 @@ public class LoginController {
     @FXML private Label lblError;
     @FXML private Button btnIngresar;
 
-    private final RecuperacionService recuperacionService = new RecuperacionService();
+    private final ClienteRecuperacion recuperacionService = new ClienteRecuperacion();
     private final Hyperlink btnRecuperar = new Hyperlink("Olvidé mi contraseña");
 
     @FXML
@@ -110,7 +110,7 @@ public class LoginController {
                 pedirCodigo(cif);
             } else if (boton == enviar) {
                 ejecutarRecuperacion(() -> {
-                    recuperacionService.enviar(cif);
+                    recuperacionService.solicitar(cif);
                     return true;
                 }, enviado -> pedirCodigo(cif));
             }

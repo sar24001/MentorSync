@@ -10,6 +10,7 @@
     <name>MentorSync</name>
 
     <properties>
+        <mentorsync.mainClass>uam.edu.ni.mentorsync/uam.edu.ni.mentorsync.MentorSyncApplication</mentorsync.mainClass>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.12.1</junit.version>
     </properties>
@@ -92,7 +93,7 @@
                         <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>uam.edu.ni.mentorsync/uam.edu.ni.mentorsync.MentorSyncApplication</mainClass>
+                            <mainClass>${mentorsync.mainClass}</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>
