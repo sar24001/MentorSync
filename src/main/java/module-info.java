@@ -4,6 +4,7 @@ module uam.edu.ni.mentorsync {
     requires jakarta.persistence;
     requires org.hibernate.orm.core;
     requires org.postgresql.jdbc;
+    requires java.sql;
     requires java.net.http;
     requires jdk.httpserver;
     requires com.fasterxml.jackson.databind;

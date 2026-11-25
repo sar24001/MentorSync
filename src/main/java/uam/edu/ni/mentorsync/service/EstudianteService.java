@@ -1,7 +1,9 @@
 package uam.edu.ni.mentorsync.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import uam.edu.ni.mentorsync.dao.CatalogoPrivadoDAO;
 import uam.edu.ni.mentorsync.model.EstudianteApiDTO;
+import uam.edu.ni.mentorsync.util.SesionActual;
 
 import java.io.IOException;
 import java.net.URI;
@@ -70,12 +72,17 @@ public class EstudianteService {
         }
         HttpResponse<byte[]> respuesta = cliente().send(solicitud.build(), HttpResponse.BodyHandlers.ofByteArray());
 
-        return switch (respuesta.statusCode()) {
+        Optional<EstudianteApiDTO> publico = switch (respuesta.statusCode()) {
             case 200 -> Arrays.stream(json.readValue(respuesta.body(), EstudianteApiDTO[].class))
                     .filter(estudiante -> cifBuscado.equals(estudiante.cif()))
                     .findFirst();
             case 404 -> { if (usarSupabase) throw new IOException("No se encontró el catálogo en Supabase."); yield Optional.empty(); }
             default -> throw new IOException("Respuesta inesperada de la API académica (HTTP " + respuesta.statusCode() + ").");
         };
+        var actor = SesionActual.getUsuario();
+        if (publico.isEmpty() && actor != null && "COORDINADOR".equals(actor.getRol())) {
+            return new CatalogoPrivadoDAO().buscar(cifBuscado);
+        }
+        return publico;
     }
 }
