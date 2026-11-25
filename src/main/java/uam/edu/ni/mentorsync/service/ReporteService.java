@@ -75,7 +75,7 @@ public class ReporteService {
                     tutor.getNombre(),
                     tutor.getCif(),
                     tutor.getCarrera() != null ? tutor.getCarrera() : "No especificada",
-                    calcularTotalHoras(tutor, sesiones)
+                    calcularTotalHoras(sesiones)
             );
             Paragraph pCuerpo = new Paragraph(cuerpo, fNormal);
             pCuerpo.setAlignment(Element.ALIGN_JUSTIFIED);
@@ -96,7 +96,7 @@ public class ReporteService {
                 sumaHoras += duracion;
                 agregarCeldaDato(tabla, t.getFecha().format(FMT_FECHA), fNormal);
                 agregarCeldaDato(tabla, t.getAsignatura().toString(), fNormal);
-                agregarCeldaDato(tabla, t.getEstudiante().getNombre(), fNormal);
+                agregarCeldaDato(tabla, t.esGrupal() ? "Tutoría grupal" : t.getEstudiante().getNombre(), fNormal);
                 agregarCeldaDato(tabla, t.getHoraInicio() + " - " + t.getHoraFin(), fNormal);
                 agregarCeldaDato(tabla, String.format("%.2f", duracion), fNormal);
             }
@@ -111,8 +111,7 @@ public class ReporteService {
             doc.add(tabla);
 
             Paragraph resumen = new Paragraph(
-                    String.format("\nTotal Horas en Sesiones Validadas: %.2f hrs  |  Saldo Acumulado en Sistema: %.2f hrs",
-                            sumaHoras, tutor.getHorasAcumuladas()),
+                    String.format("\nTotal Horas en Sesiones Validadas: %.2f hrs", sumaHoras),
                     fNegrita
             );
             resumen.setSpacingBefore(10);
@@ -149,7 +148,7 @@ public class ReporteService {
             ws.value(4, 0, "Carrera:");
             ws.value(4, 1, tutor.getCarrera() != null ? tutor.getCarrera() : "N/A");
             ws.value(5, 0, "Horas Acumuladas:");
-            ws.value(5, 1, tutor.getHorasAcumuladas());
+            ws.value(5, 1, calcularTotalHoras(sesiones));
             ws.style(2, 0).bold().set();
             ws.style(3, 0).bold().set();
             ws.style(4, 0).bold().set();
@@ -170,7 +169,7 @@ public class ReporteService {
                 ws.value(row, 0, t.getId());
                 ws.value(row, 1, t.getFecha().format(FMT_FECHA));
                 ws.value(row, 2, t.getAsignatura().toString());
-                ws.value(row, 3, t.getEstudiante().getNombre());
+                ws.value(row, 3, t.esGrupal() ? "Tutoría grupal" : t.getEstudiante().getNombre());
                 ws.value(row, 4, t.getHoraInicio().toString());
                 ws.value(row, 5, t.getHoraFin().toString());
                 ws.value(row, 6, hrs);
@@ -323,10 +322,8 @@ public class ReporteService {
     // MÉTODOS AUXILIARES
     // =========================================================================
 
-    private double calcularTotalHoras(Usuario tutor, List<Tutoria> sesiones) {
-        double sum = sesiones.stream().mapToDouble(Tutoria::getDuracionHoras).sum();
-        if (sum > 0) return sum;
-        return tutor.getHorasAcumuladas() != null ? tutor.getHorasAcumuladas() : 0.0;
+    private double calcularTotalHoras(List<Tutoria> sesiones) {
+        return sesiones.stream().mapToDouble(Tutoria::getDuracionHoras).sum();
     }
 
     private String textoFiltros(String resumenFiltros) {

@@ -8,14 +8,22 @@ import java.util.Map;
 
 public final class HibernateUtil {
     private static EntityManagerFactory factory;
+    private static String password = System.getenv("MENTORSYNC_DB_PASSWORD");
 
     private HibernateUtil() {
     }
 
+    public static synchronized boolean tienePassword() {
+        return password != null && !password.isEmpty();
+    }
+
+    public static synchronized void configurarPassword(String valor) {
+        password = valor;
+    }
+
     public static synchronized EntityManager getEntityManager() {
         if (factory == null) {
-            String password = System.getenv("MENTORSYNC_DB_PASSWORD");
-            if (password == null || password.isEmpty()) {
+            if (!tienePassword()) {
                 throw new IllegalStateException("Configura MENTORSYNC_DB_PASSWORD para conectar a PostgreSQL.");
             }
             Map<String, String> environment = System.getenv();

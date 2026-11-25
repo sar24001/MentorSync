@@ -1,7 +1,9 @@
 package uam.edu.ni.mentorsync.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import uam.edu.ni.mentorsync.dao.CatalogoPrivadoDAO;
 import uam.edu.ni.mentorsync.model.EstudianteApiDTO;
+import uam.edu.ni.mentorsync.util.SesionActual;
 
 import java.io.IOException;
 import java.net.URI;
@@ -14,7 +16,7 @@ import java.util.Optional;
 
 public class EstudianteService {
     private static final String URL_API =
-            "https://gist.githubusercontent.com/sar24001/55b0fea24d086178d4a268b1550a8814/raw/d436c46844329c76c1b690c611327cd295fb41be/estudiantes.json";
+            "https://gist.githubusercontent.com/sar24001/55b0fea24d086178d4a268b1550a8814/raw/4b24be81c6003bcb1e36ff045074de1cf8d67f66/estudiantes.json";
 
     private HttpClient cliente;
     private final ObjectMapper json = new ObjectMapper();
@@ -35,20 +37,52 @@ public class EstudianteService {
         }
         String cifBuscado = cif.trim();
 
-        HttpRequest solicitud = HttpRequest.newBuilder(URI.create(URL_API))
+        String supabase = System.getenv("MENTORSYNC_SUPABASE_URL");
+        String llave = System.getenv("MENTORSYNC_SUPABASE_PUBLISHABLE_KEY");
+        boolean usarSupabase = supabase != null && !supabase.isBlank();
+        if (usarSupabase && (llave == null || !llave.startsWith("sb_publishable_"))) {
+            throw new IOException("Configura la clave publicable del catálogo de Supabase.");
+        }
+        if (!usarSupabase && llave != null && !llave.isBlank()) {
+            throw new IOException("Configura la URL del catálogo de Supabase.");
+        }
+
+        URI url = URI.create(URL_API);
+        if (usarSupabase) {
+            URI proyecto = URI.create(supabase.trim());
+            if (!"https".equalsIgnoreCase(proyecto.getScheme()) || proyecto.getHost() == null
+                    || proyecto.getRawUserInfo() != null || proyecto.getRawQuery() != null
+                    || proyecto.getRawFragment() != null || (proyecto.getPath() != null
+                    && !proyecto.getPath().isEmpty() && !"/".equals(proyecto.getPath()))) {
+                throw new IOException("Usa la URL HTTPS del proyecto Supabase, sin ruta adicional.");
+            }
+            String recurso = "/rest/v1/estudiantes?cif=eq." + cifBuscado
+                    + "&select=cif,nombre,correo,carrera,anioCarrera,semestre,activo,"
+                    + "clasesCursadas:clases_cursadas(codigo,nombre,nota)";
+            url = proyecto.resolve(recurso);
+        }
+
+        HttpRequest.Builder solicitud = HttpRequest.newBuilder(url)
                 .timeout(Duration.ofSeconds(8))
                 .header("Accept", "application/json")
-                .GET()
-                .build();
+                .GET();
 
-        HttpResponse<byte[]> respuesta = cliente().send(solicitud, HttpResponse.BodyHandlers.ofByteArray());
+        if (usarSupabase) {
+            solicitud.header("apikey", llave);
+        }
+        HttpResponse<byte[]> respuesta = cliente().send(solicitud.build(), HttpResponse.BodyHandlers.ofByteArray());
 
-        return switch (respuesta.statusCode()) {
+        Optional<EstudianteApiDTO> publico = switch (respuesta.statusCode()) {
             case 200 -> Arrays.stream(json.readValue(respuesta.body(), EstudianteApiDTO[].class))
                     .filter(estudiante -> cifBuscado.equals(estudiante.cif()))
                     .findFirst();
-            case 404 -> Optional.empty();
+            case 404 -> { if (usarSupabase) throw new IOException("No se encontró el catálogo en Supabase."); yield Optional.empty(); }
             default -> throw new IOException("Respuesta inesperada de la API académica (HTTP " + respuesta.statusCode() + ").");
         };
+        var actor = SesionActual.getUsuario();
+        if (publico.isEmpty() && actor != null && "COORDINADOR".equals(actor.getRol())) {
+            return new CatalogoPrivadoDAO().buscar(cifBuscado);
+        }
+        return publico;
     }
 }

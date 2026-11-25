@@ -72,15 +72,15 @@ public class Usuario {
         return activo;
     }
 
-    public String getCif() {
-        return cif;
-    }
-
     public String getCarrera() {
         return carrera;
     }
 
-    public Double getHorasAcumuladas() {
-        return horasAcumuladas;
+    public double getHorasAcumuladas() {
+        return horasAcumuladas == null ? 0.0 : horasAcumuladas;
+    }
+
+    public String getCif() {
+        return cif;
     }
 }

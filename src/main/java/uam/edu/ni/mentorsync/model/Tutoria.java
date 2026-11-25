@@ -2,6 +2,7 @@ package uam.edu.ni.mentorsync.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.UUID;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 
@@ -12,6 +13,9 @@ public class Tutoria {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "grupo_id")
+    private UUID grupoId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "tutor_id", nullable = false)
@@ -47,6 +51,10 @@ public class Tutoria {
     private String observaciones;
 
     public Tutoria() {}
+
+    public boolean esGrupal() {
+        return grupoId != null;
+    }
 
     public double getDuracionHoras() {
         if (horaInicio == null || horaFin == null) return 0.0;

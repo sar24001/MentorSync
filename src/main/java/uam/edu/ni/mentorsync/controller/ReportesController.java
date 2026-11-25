@@ -251,8 +251,8 @@ public class ReportesController {
             Double notaFin = txtNotaFinal.getText().isBlank() ? null : Double.parseDouble(txtNotaFinal.getText().trim());
             String obs = txtObservaciones.getText().trim();
 
-            if ((notaIni != null && (notaIni < 0 || notaIni > 100)) ||
-                    (notaFin != null && (notaFin < 0 || notaFin > 100))) {
+            if ((notaIni != null && (!Double.isFinite(notaIni) || notaIni < 0 || notaIni > 100)) ||
+                    (notaFin != null && (!Double.isFinite(notaFin) || notaFin < 0 || notaFin > 100))) {
                 mostrarAlerta(Alert.AlertType.WARNING, "Validación", "Las notas deben estar entre 0 y 100.");
                 return;
             }
