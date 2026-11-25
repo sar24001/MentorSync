@@ -10,6 +10,7 @@ import org.dhatim.fastexcel.Worksheet;
 import uam.edu.ni.mentorsync.dao.SeguimientoDAO;
 import uam.edu.ni.mentorsync.model.Tutoria;
 import uam.edu.ni.mentorsync.model.Usuario;
+import uam.edu.ni.mentorsync.util.SesionActual;
 
 import java.awt.Color;
 import java.io.File;
@@ -23,16 +24,20 @@ public class ReporteService {
 
     private final SeguimientoDAO seguimientoDAO = new SeguimientoDAO();
     private static final DateTimeFormatter FMT_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final String SIN_FILTROS = "Sin filtros aplicados";
 
     public List<Tutoria> obtenerTutoriasEvaluables() {
+        exigirCoordinador();
         return seguimientoDAO.listarTutoriasEvaluables();
     }
 
     public List<Usuario> obtenerTutoresActivos() {
+        exigirCoordinador();
         return seguimientoDAO.listarTutoresActivos();
     }
 
     public void guardarEvaluacion(Long tutoriaId, Double notaInicial, Double notaFinal, String observaciones) {
+        exigirCoordinador();
         seguimientoDAO.actualizarCalificaciones(tutoriaId, notaInicial, notaFinal, observaciones);
     }
 
@@ -41,6 +46,7 @@ public class ReporteService {
     // =========================================================================
 
     public void exportarConstanciaHorasPDF(Usuario tutor, File destino) throws Exception {
+        exigirCoordinador();
         List<Tutoria> sesiones = seguimientoDAO.listarTutoriasValidadasPorTutor(tutor.getId());
 
         Document doc = new Document(PageSize.LETTER, 45, 45, 50, 50);
@@ -125,6 +131,7 @@ public class ReporteService {
     }
 
     public void exportarConstanciaHorasExcel(Usuario tutor, File destino) throws IOException {
+        exigirCoordinador();
         List<Tutoria> sesiones = seguimientoDAO.listarTutoriasValidadasPorTutor(tutor.getId());
 
         try (FileOutputStream fos = new FileOutputStream(destino);
@@ -183,6 +190,11 @@ public class ReporteService {
     // =========================================================================
 
     public void exportarRendimientoPDF(List<Tutoria> tutorias, File destino) throws Exception {
+        exportarRendimientoPDF(tutorias, destino, SIN_FILTROS);
+    }
+
+    public void exportarRendimientoPDF(List<Tutoria> tutorias, File destino, String resumenFiltros) throws Exception {
+        exigirCoordinador();
         Document doc = new Document(PageSize.LETTER.rotate(), 36, 36, 40, 40);
         try (FileOutputStream fos = new FileOutputStream(destino)) {
             PdfWriter.getInstance(doc, fos);
@@ -199,8 +211,14 @@ public class ReporteService {
 
             Paragraph fechaGen = new Paragraph("Fecha de generación: " + LocalDate.now().format(FMT_FECHA), fNormal);
             fechaGen.setAlignment(Element.ALIGN_RIGHT);
-            fechaGen.setSpacingAfter(14);
+            fechaGen.setSpacingAfter(4);
             doc.add(fechaGen);
+
+            Font fFiltros = new Font(Font.HELVETICA, 9, Font.ITALIC, Color.DARK_GRAY);
+            Paragraph filtros = new Paragraph("Filtros aplicados: " + textoFiltros(resumenFiltros), fFiltros);
+            filtros.setAlignment(Element.ALIGN_RIGHT);
+            filtros.setSpacingAfter(14);
+            doc.add(filtros);
 
             PdfPTable tabla = new PdfPTable(new float[]{2.5f, 2.5f, 2.3f, 1.3f, 1.3f, 1.4f, 3.2f});
             tabla.setWidthPercentage(100);
@@ -252,6 +270,11 @@ public class ReporteService {
     }
 
     public void exportarRendimientoExcel(List<Tutoria> tutorias, File destino) throws IOException {
+        exportarRendimientoExcel(tutorias, destino, SIN_FILTROS);
+    }
+
+    public void exportarRendimientoExcel(List<Tutoria> tutorias, File destino, String resumenFiltros) throws IOException {
+        exigirCoordinador();
         try (FileOutputStream fos = new FileOutputStream(destino);
              Workbook wb = new Workbook(fos, "MentorSync", "1.0")) {
 
@@ -260,6 +283,8 @@ public class ReporteService {
             ws.value(0, 0, "REPORTE DE IMPACTO Y RENDIMIENTO ACADÉMICO - MENTORSYNC");
             ws.style(0, 0).bold().fontSize(14).set();
             ws.value(1, 0, "Generado el: " + LocalDate.now().format(FMT_FECHA));
+            ws.value(2, 0, "Filtros aplicados: " + textoFiltros(resumenFiltros));
+            ws.style(2, 0).italic().fontColor("475569").set();
 
             int headerRow = 3;
             String[] headers = {"Fecha", "Estudiante", "Carnet Est.", "Asignatura", "Tutor", "Estado", "Nota Inicial", "Nota Final", "Variación", "Condición", "Observaciones"};
@@ -300,7 +325,19 @@ public class ReporteService {
 
     private double calcularTotalHoras(Usuario tutor, List<Tutoria> sesiones) {
         double sum = sesiones.stream().mapToDouble(Tutoria::getDuracionHoras).sum();
-        return sum > 0 ? sum : tutor.getHorasAcumuladas();
+        if (sum > 0) return sum;
+        return tutor.getHorasAcumuladas() != null ? tutor.getHorasAcumuladas() : 0.0;
+    }
+
+    private String textoFiltros(String resumenFiltros) {
+        return resumenFiltros == null || resumenFiltros.isBlank() ? SIN_FILTROS : resumenFiltros;
+    }
+
+    private void exigirCoordinador() {
+        Usuario actor = SesionActual.getUsuario();
+        if (actor == null || !"COORDINADOR".equals(actor.getRol())) {
+            throw new IllegalStateException("El usuario no tiene permiso para esta acción.");
+        }
     }
 
     private void agregarCeldaEncabezado(PdfPTable tabla, String texto) {

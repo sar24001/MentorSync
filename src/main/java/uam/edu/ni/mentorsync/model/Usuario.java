@@ -75,4 +75,12 @@ public class Usuario {
     public String getCif() {
         return cif;
     }
+
+    public String getCarrera() {
+        return carrera;
+    }
+
+    public Double getHorasAcumuladas() {
+        return horasAcumuladas;
+    }
 }
