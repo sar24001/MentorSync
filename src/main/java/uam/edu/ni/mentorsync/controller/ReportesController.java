@@ -4,6 +4,8 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -16,10 +18,18 @@ import uam.edu.ni.mentorsync.service.ReporteService;
 import uam.edu.ni.mentorsync.util.SesionActual;
 
 import java.io.File;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 public class ReportesController {
+
+    private static final String TODAS = "Todas";
+    private static final DateTimeFormatter FMT_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     @FXML private ComboBox<Tutoria> cmbTutoriaEvaluar;
     @FXML private TextField txtNotaInicial;
@@ -31,6 +41,12 @@ public class ReportesController {
     @FXML private Button btnReporteHoras;
     @FXML private Button btnReporteRendimiento;
 
+    @FXML private ComboBox<String> cmbFiltroAsignatura;
+    @FXML private ComboBox<String> cmbFiltroCarrera;
+    @FXML private DatePicker dpFiltroDesde;
+    @FXML private DatePicker dpFiltroHasta;
+    @FXML private Button btnLimpiarFiltros;
+
     @FXML private TableView<Tutoria> tblRendimiento;
     @FXML private TableColumn<Tutoria, String> colEstudiante;
     @FXML private TableColumn<Tutoria, String> colAsignatura;
@@ -40,16 +56,20 @@ public class ReportesController {
     @FXML private TableColumn<Tutoria, String> colObservaciones;
 
     private final ReporteService reporteService = new ReporteService();
-    private final ObservableList<Tutoria> listaTutorias = FXCollections.observableArrayList();
+    private final ObservableList<Tutoria> listaCompletaTutorias = FXCollections.observableArrayList();
+    private final FilteredList<Tutoria> listaFiltrada = new FilteredList<>(listaCompletaTutorias, t -> true);
 
     @FXML
     public void initialize() {
-        Usuario usuario = SesionActual.getUsuario();
-        if (usuario == null || !"COORDINADOR".equals(usuario.getRol())) {
-            return;
-        }
         configurarTabla();
         configurarListeners();
+
+        // La pestaña se carga vía fx:include antes de que PrincipalController la oculte,
+        // así que solo se consulta la BD si el usuario es coordinador.
+        Usuario usuario = SesionActual.getUsuario();
+        if (usuario == null || !"COORDINADOR".equalsIgnoreCase(usuario.getRol())) {
+            return;
+        }
         cargarDatos();
     }
 
@@ -67,7 +87,10 @@ public class ReportesController {
         colObservaciones.setCellValueFactory(cell ->
                 new SimpleStringProperty(cell.getValue().getObservaciones() != null ? cell.getValue().getObservaciones() : ""));
 
-        tblRendimiento.setItems(listaTutorias);
+        // SortedList permite ordenar por columnas sin modificar la lista filtrada
+        SortedList<Tutoria> listaOrdenada = new SortedList<>(listaFiltrada);
+        listaOrdenada.comparatorProperty().bind(tblRendimiento.comparatorProperty());
+        tblRendimiento.setItems(listaOrdenada);
     }
 
     private void configurarListeners() {
@@ -101,14 +124,21 @@ public class ReportesController {
         cmbTutorReporte.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, tutor) ->
                 btnReporteHoras.setDisable(tutor == null)
         );
+
+        // Cualquier cambio en los filtros vuelve a aplicar el predicado
+        cmbFiltroAsignatura.valueProperty().addListener((obs, oldVal, nuevo) -> aplicarFiltros());
+        cmbFiltroCarrera.valueProperty().addListener((obs, oldVal, nuevo) -> aplicarFiltros());
+        dpFiltroDesde.valueProperty().addListener((obs, oldVal, nuevo) -> aplicarFiltros());
+        dpFiltroHasta.valueProperty().addListener((obs, oldVal, nuevo) -> aplicarFiltros());
     }
 
     private void cargarDatos() {
         try {
             List<Tutoria> tutorias = reporteService.obtenerTutoriasEvaluables();
-            listaTutorias.setAll(tutorias);
+            listaCompletaTutorias.setAll(tutorias);
             cmbTutoriaEvaluar.setItems(FXCollections.observableArrayList(tutorias));
             btnReporteRendimiento.setDisable(tutorias.isEmpty());
+            poblarFiltros();
 
             List<Usuario> tutores = reporteService.obtenerTutoresActivos();
             cmbTutorReporte.setItems(FXCollections.observableArrayList(tutores));
@@ -117,6 +147,99 @@ public class ReportesController {
                     "No se pudieron cargar los datos de reportes: " + e.getMessage());
         }
     }
+
+    // =========================================================================
+    // FILTROS
+    // =========================================================================
+
+    private void poblarFiltros() {
+        actualizarOpciones(cmbFiltroAsignatura,
+                t -> t.getAsignatura() != null ? t.getAsignatura().toString() : null);
+        actualizarOpciones(cmbFiltroCarrera,
+                t -> t.getEstudiante() != null ? t.getEstudiante().getCarrera() : null);
+    }
+
+    /** Rellena el combo con "Todas" + los valores distintos no vacíos, conservando la selección si sigue existiendo. */
+    private void actualizarOpciones(ComboBox<String> combo, Function<Tutoria, String> extractor) {
+        String seleccionado = combo.getValue();
+        List<String> opciones = new ArrayList<>();
+        opciones.add(TODAS);
+        listaCompletaTutorias.stream()
+                .map(extractor)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(valor -> !valor.isEmpty())
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .forEach(opciones::add);
+        combo.setItems(FXCollections.observableArrayList(opciones));
+        combo.setValue(opciones.contains(seleccionado) ? seleccionado : null);
+    }
+
+    private void aplicarFiltros() {
+        String asignatura = valorFiltro(cmbFiltroAsignatura);
+        String carrera = valorFiltro(cmbFiltroCarrera);
+        LocalDate desde = dpFiltroDesde.getValue();
+        LocalDate hasta = dpFiltroHasta.getValue();
+
+        listaFiltrada.setPredicate(t -> {
+            if (asignatura != null
+                    && (t.getAsignatura() == null || !asignatura.equals(t.getAsignatura().toString().trim()))) {
+                return false;
+            }
+            if (carrera != null) {
+                String carreraEst = t.getEstudiante() != null ? t.getEstudiante().getCarrera() : null;
+                if (carreraEst == null || !carrera.equals(carreraEst.trim())) {
+                    return false;
+                }
+            }
+            if (desde != null && (t.getFecha() == null || t.getFecha().isBefore(desde))) {
+                return false;
+            }
+            if (hasta != null && (t.getFecha() == null || t.getFecha().isAfter(hasta))) {
+                return false;
+            }
+            return true;
+        });
+    }
+
+    /** Devuelve el valor seleccionado del combo, o null si es "Todas" o no hay selección. */
+    private String valorFiltro(ComboBox<String> combo) {
+        String valor = combo.getValue();
+        return valor == null || TODAS.equals(valor) ? null : valor;
+    }
+
+    private String construirResumenFiltros() {
+        String asignatura = Optional.ofNullable(valorFiltro(cmbFiltroAsignatura)).orElse(TODAS);
+        String carrera = Optional.ofNullable(valorFiltro(cmbFiltroCarrera)).orElse(TODAS);
+        LocalDate desde = dpFiltroDesde.getValue();
+        LocalDate hasta = dpFiltroHasta.getValue();
+
+        String periodo;
+        if (desde == null && hasta == null) {
+            periodo = "Todos";
+        } else if (hasta == null) {
+            periodo = "Desde " + desde.format(FMT_FECHA);
+        } else if (desde == null) {
+            periodo = "Hasta " + hasta.format(FMT_FECHA);
+        } else {
+            periodo = desde.format(FMT_FECHA) + " - " + hasta.format(FMT_FECHA);
+        }
+        return "Asignatura: " + asignatura + " | Carrera: " + carrera + " | Periodo: " + periodo;
+    }
+
+    @FXML
+    private void handleLimpiarFiltros(ActionEvent event) {
+        cmbFiltroAsignatura.setValue(null);
+        cmbFiltroCarrera.setValue(null);
+        dpFiltroDesde.setValue(null);
+        dpFiltroHasta.setValue(null);
+        aplicarFiltros();
+    }
+
+    // =========================================================================
+    // ACCIONES
+    // =========================================================================
 
     @FXML
     private void handleGuardarNotas(ActionEvent event) {
@@ -174,13 +297,11 @@ public class ReportesController {
 
     @FXML
     private void handleGenerarReporteRendimiento(ActionEvent event) {
-        if (listaTutorias.isEmpty()) return;
-        Optional<List<Tutoria>> seleccion = elegirFiltrosRendimiento();
-        if (seleccion.isEmpty()) return;
-        List<Tutoria> resultados = seleccion.get();
-        if (resultados.isEmpty()) {
-            mostrarAlerta(Alert.AlertType.INFORMATION, "Sin resultados",
-                    "No hay tutorías que coincidan con los filtros.");
+        // Se exporta exactamente lo visible en la tabla (filtrado y en el orden mostrado)
+        List<Tutoria> visibles = new ArrayList<>(tblRendimiento.getItems());
+        if (visibles.isEmpty()) {
+            mostrarAlerta(Alert.AlertType.INFORMATION, "Sin datos para exportar",
+                    "No hay sesiones que coincidan con los filtros seleccionados.");
             return;
         }
 
@@ -189,68 +310,22 @@ public class ReportesController {
 
         String formato = formatoOpt.get();
         boolean esPdf = formato.startsWith("PDF");
+        String resumenFiltros = construirResumenFiltros();
 
         File destino = mostrarSaveDialog(((Node) event.getSource()).getScene().getWindow(), "Reporte_Rendimiento_MentorSync", esPdf);
         if (destino == null) return;
 
         try {
             if (esPdf) {
-                reporteService.exportarRendimientoPDF(resultados, destino);
+                reporteService.exportarRendimientoPDF(visibles, destino, resumenFiltros);
             } else {
-                reporteService.exportarRendimientoExcel(resultados, destino);
+                reporteService.exportarRendimientoExcel(visibles, destino, resumenFiltros);
             }
             mostrarAlerta(Alert.AlertType.INFORMATION, "Reporte Generado",
                     "Archivo guardado exitosamente en:\n" + destino.getAbsolutePath());
         } catch (Exception e) {
             mostrarAlerta(Alert.AlertType.ERROR, "Error al exportar", e.getMessage());
         }
-    }
-
-    private Optional<List<Tutoria>> elegirFiltrosRendimiento() {
-        ComboBox<String> semestre = filtro("Todos los semestres", listaTutorias.stream()
-                .map(this::semestreDe).distinct().sorted().toList());
-        ComboBox<String> carrera = filtro("Todas las carreras", listaTutorias.stream()
-                .map(tutoria -> tutoria.getEstudiante().getCarrera())
-                .filter(nombre -> nombre != null && !nombre.isBlank()).distinct().sorted().toList());
-        ComboBox<String> asignatura = filtro("Todas las asignaturas", listaTutorias.stream()
-                .map(tutoria -> tutoria.getAsignatura().toString()).distinct().sorted().toList());
-
-        Dialog<List<Tutoria>> dialogo = new Dialog<>();
-        dialogo.setTitle("Reporte de rendimiento");
-        dialogo.setHeaderText("Filtrar las tutorías para exportar");
-        dialogo.initOwner(tblRendimiento.getScene().getWindow());
-
-        var campos = new javafx.scene.layout.GridPane();
-        campos.setHgap(12);
-        campos.setVgap(8);
-        campos.addRow(0, new Label("Semestre"), semestre);
-        campos.addRow(1, new Label("Carrera del estudiante"), carrera);
-        campos.addRow(2, new Label("Asignatura"), asignatura);
-        dialogo.getDialogPane().setContent(campos);
-        dialogo.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-        dialogo.setResultConverter(boton -> boton == ButtonType.OK ? listaTutorias.stream()
-                .filter(tutoria -> coincide(semestre, semestreDe(tutoria)))
-                .filter(tutoria -> coincide(carrera, tutoria.getEstudiante().getCarrera()))
-                .filter(tutoria -> coincide(asignatura, tutoria.getAsignatura().toString()))
-                .toList() : null);
-        return dialogo.showAndWait();
-    }
-
-    private ComboBox<String> filtro(String opcionGeneral, List<String> opciones) {
-        ComboBox<String> filtro = new ComboBox<>();
-        filtro.getItems().add(opcionGeneral);
-        filtro.getItems().addAll(opciones);
-        filtro.getSelectionModel().selectFirst();
-        return filtro;
-    }
-
-    private boolean coincide(ComboBox<String> filtro, String valor) {
-        return filtro.getSelectionModel().getSelectedIndex() == 0 || filtro.getValue().equals(valor);
-    }
-
-    private String semestreDe(Tutoria tutoria) {
-        var fecha = tutoria.getFecha();
-        return fecha.getYear() + (fecha.getMonthValue() <= 6 ? " - I" : " - II");
     }
 
     private Optional<String> elegirFormato(String tituloReporte) {
